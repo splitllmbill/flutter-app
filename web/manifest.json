@@ -1,0 +1,11 @@
+{
+    "name": "SplitLLM",
+    "short_name": "SplitLLM",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#121212",
+    "theme_color": "#bb86fc",
+    "description": "Smart Bill Splitting App",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false
+}

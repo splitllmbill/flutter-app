@@ -1,0 +1,54 @@
+name: splitllm
+description: SplitLLM - Smart Bill Splitting App
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  flutter_riverpod: ^3.2.1
+  riverpod_annotation: ^4.0.2
+
+  # Routing
+  go_router: ^17.1.0
+
+  # HTTP Client
+  dio: ^5.4.0
+
+  # Firebase
+  firebase_core: ^4.4.0
+  firebase_auth: ^6.1.4
+  google_sign_in: ^7.2.0
+
+  # UI
+  fl_chart: ^1.1.1
+  qr_flutter: ^4.1.0
+  google_fonts: ^8.0.2
+
+  # Utilities
+  intl: ^0.20.2
+  shared_preferences: ^2.2.2
+  url_launcher: ^6.2.3
+  image_picker: ^1.0.7
+  file_picker: ^10.3.10
+
+  # Icons
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.7
+  riverpod_generator: ^4.0.3
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
