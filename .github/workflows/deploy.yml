@@ -31,7 +31,6 @@ jobs:
           flutter build web \
             --release \
             --dart-define=API_BASE_URL=${{ secrets.API_BASE_URL }} \
-            --web-renderer html \
             --tree-shake-icons
 
       - name: Deploy to Firebase Hosting
