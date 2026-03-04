@@ -61,20 +61,27 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () async {
               final code = _friendCodeController.text.trim();
               if (code.isEmpty) return;
               Navigator.pop(ctx);
               try {
-                await ref.read(apiClientProvider).post('/db/addFriend', data: {'friendCode': code});
+                await ref
+                    .read(apiClientProvider)
+                    .post('/db/addFriend', data: {'friendCode': code});
                 _friendCodeController.clear();
+                if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Friend added!'), backgroundColor: AppTheme.successColor),
+                  const SnackBar(
+                      content: Text('Friend added!'),
+                      backgroundColor: AppTheme.successColor),
                 );
                 _loadFriends();
               } catch (e) {
+                if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Failed to add friend')),
                 );
@@ -94,7 +101,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         title: const Text('Remove Friend'),
         content: const Text('Are you sure?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
@@ -106,7 +115,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
 
     if (confirm == true) {
       try {
-        await ref.read(apiClientProvider).delete('/db/deleteFriend', data: {'friendCode': friendCode});
+        await ref
+            .read(apiClientProvider)
+            .delete('/db/deleteFriend', data: {'friendCode': friendCode});
         _loadFriends();
       } catch (_) {
         if (mounted) {
@@ -134,9 +145,12 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(_error!, style: const TextStyle(color: AppTheme.textSecondary)),
+                      Text(_error!,
+                          style:
+                              const TextStyle(color: AppTheme.textSecondary)),
                       const SizedBox(height: 16),
-                      ElevatedButton(onPressed: _loadFriends, child: const Text('Retry')),
+                      ElevatedButton(
+                          onPressed: _loadFriends, child: const Text('Retry')),
                     ],
                   ),
                 )
@@ -149,17 +163,23 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                         itemCount: _friends.length,
                         itemBuilder: (context, index) {
                           final friend = _friends[index];
-                          final friendId = friend['id']?.toString() ?? friend['_id']?.toString() ?? '';
-                          final name = friend['name'] ?? friend['email'] ?? 'Unknown';
+                          final friendId = friend['id']?.toString() ??
+                              friend['_id']?.toString() ??
+                              '';
+                          final name =
+                              friend['name'] ?? friend['email'] ?? 'Unknown';
                           final balance = (friend['balance'] ?? 0).toDouble();
-                          final friendCode = friend['friendCode'] ?? friend['friend_code'] ?? '';
+                          final friendCode = friend['friendCode'] ??
+                              friend['friend_code'] ??
+                              '';
 
                           return Card(
                             margin: const EdgeInsets.only(bottom: 8),
                             child: ListTile(
                               onTap: () => context.push('/friend/$friendId'),
                               leading: CircleAvatar(
-                                backgroundColor: AppTheme.primaryColor.withOpacity(0.15),
+                                backgroundColor: AppTheme.primaryColor
+                                    .withValues(alpha: 0.15),
                                 child: Text(
                                   AppUtils.getInitials(name),
                                   style: const TextStyle(
@@ -168,7 +188,9 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                                   ),
                                 ),
                               ),
-                              title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                              title: Text(name,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600)),
                               subtitle: Text(
                                 balance == 0
                                     ? 'Settled up'
@@ -186,10 +208,13 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                               ),
                               trailing: PopupMenuButton<String>(
                                 onSelected: (val) {
-                                  if (val == 'delete') _deleteFriend(friendCode);
+                                  if (val == 'delete') {
+                                    _deleteFriend(friendCode);
+                                  }
                                 },
                                 itemBuilder: (ctx) => [
-                                  const PopupMenuItem(value: 'delete', child: Text('Remove')),
+                                  const PopupMenuItem(
+                                      value: 'delete', child: Text('Remove')),
                                 ],
                               ),
                             ),
@@ -205,9 +230,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.people_outline, size: 80, color: AppTheme.primaryColor.withOpacity(0.3)),
+          Icon(Icons.people_outline,
+              size: 80, color: AppTheme.primaryColor.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
-          const Text('No friends yet', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+          const Text('No friends yet',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           const Text('Add friends to start splitting bills',
               style: TextStyle(color: AppTheme.textSecondary)),

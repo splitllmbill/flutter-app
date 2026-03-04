@@ -108,7 +108,7 @@ class _PersonalExpensesScreenState extends ConsumerState<PersonalExpensesScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.account_balance_wallet_outlined,
-                size: 80, color: AppTheme.primaryColor.withOpacity(0.3)),
+                size: 80, color: AppTheme.primaryColor.withValues(alpha: 0.3)),
             const SizedBox(height: 16),
             const Text('No personal expenses',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
@@ -137,7 +137,7 @@ class _PersonalExpensesScreenState extends ConsumerState<PersonalExpensesScreen>
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
               leading: CircleAvatar(
-                backgroundColor: AppTheme.primaryColor.withOpacity(0.15),
+                backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.15),
                 child: const Icon(Icons.receipt, color: AppTheme.primaryColor, size: 20),
               ),
               title: Text(expense.title, style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -164,9 +164,9 @@ class _PersonalExpensesScreenState extends ConsumerState<PersonalExpensesScreen>
           padding: const EdgeInsets.all(16),
           margin: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
+            border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [
@@ -175,7 +175,7 @@ class _PersonalExpensesScreenState extends ConsumerState<PersonalExpensesScreen>
               Expanded(
                 child: Text(
                   'Tell me your expense naturally, e.g., "Spent 500 on dinner"',
-                  style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.8), fontSize: 13),
+                  style: TextStyle(color: AppTheme.primaryColor.withValues(alpha: 0.8), fontSize: 13),
                 ),
               ),
             ],
@@ -190,7 +190,7 @@ class _PersonalExpensesScreenState extends ConsumerState<PersonalExpensesScreen>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.chat_bubble_outline,
-                          size: 48, color: AppTheme.textSecondary.withOpacity(0.3)),
+                          size: 48, color: AppTheme.textSecondary.withValues(alpha: 0.3)),
                       const SizedBox(height: 12),
                       const Text('Start a conversation',
                           style: TextStyle(color: AppTheme.textSecondary)),
@@ -239,7 +239,7 @@ class _PersonalExpensesScreenState extends ConsumerState<PersonalExpensesScreen>
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: AppTheme.surfaceColor,
-            border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
+            border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.05))),
           ),
           child: Row(
             children: [

@@ -82,7 +82,7 @@ class _SideNavBar extends StatelessWidget {
       selectedIndex: selectedIndex,
       onDestinationSelected: onItemTapped,
       backgroundColor: AppTheme.surfaceColor,
-      indicatorColor: AppTheme.primaryColor.withOpacity(0.2),
+      indicatorColor: AppTheme.primaryColor.withValues(alpha: 0.2),
       leading: Padding(
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Column(
@@ -101,7 +101,7 @@ class _SideNavBar extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            const Text(
               'SplitLLM',
               style: TextStyle(
                 color: AppTheme.primaryColor,
@@ -160,7 +160,7 @@ class _BottomNavBar extends StatelessWidget {
         color: AppTheme.surfaceColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -170,7 +170,7 @@ class _BottomNavBar extends StatelessWidget {
         selectedIndex: selectedIndex,
         onDestinationSelected: onItemTapped,
         backgroundColor: Colors.transparent,
-        indicatorColor: AppTheme.primaryColor.withOpacity(0.2),
+        indicatorColor: AppTheme.primaryColor.withValues(alpha: 0.2),
         height: 65,
         destinations: const [
           NavigationDestination(

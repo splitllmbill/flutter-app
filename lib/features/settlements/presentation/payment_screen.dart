@@ -109,7 +109,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                                 decoration: BoxDecoration(
                                   gradient: AppTheme.cardGradient,
                                   borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: Colors.white.withOpacity(0.05)),
+                                  border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
                                 ),
                                 child: Column(
                                   children: [

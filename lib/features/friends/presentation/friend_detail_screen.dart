@@ -30,12 +30,15 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
     setState(() => _isLoading = true);
     try {
       final api = ref.read(apiClientProvider);
-      final response = await api.get('/db/user/expense/friend/${widget.friendId}');
+      final response =
+          await api.get('/db/user/expense/friend/${widget.friendId}');
       final data = response.data;
       setState(() {
         _friendData = data;
         final expList = data['expenses'] ?? [];
-        _expenses = (expList as List).map<ExpenseModel>((e) => ExpenseModel.fromJson(e)).toList();
+        _expenses = (expList as List)
+            .map<ExpenseModel>((e) => ExpenseModel.fromJson(e))
+            .toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -50,7 +53,9 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
         title: const Text('Settle Up'),
         content: const Text('Mark all expenses with this friend as settled?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Settle'),
@@ -62,13 +67,17 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
     if (confirm == true) {
       try {
         await ref.read(apiClientProvider).post(
-          '/db/user/expense/friend/${widget.friendId}/settleup',
-        );
+              '/db/user/expense/friend/${widget.friendId}/settleup',
+            );
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Settled up!'), backgroundColor: AppTheme.successColor),
+          const SnackBar(
+              content: Text('Settled up!'),
+              backgroundColor: AppTheme.successColor),
         );
         _loadData();
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to settle')),
         );
@@ -79,7 +88,8 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final balance = (_friendData?['balance'] ?? 0).toDouble();
-    final friendName = _friendData?['name'] ?? _friendData?['friendName'] ?? 'Friend';
+    final friendName =
+        _friendData?['name'] ?? _friendData?['friendName'] ?? 'Friend';
 
     return Scaffold(
       appBar: AppBar(
@@ -98,7 +108,8 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/createExpense/friend/${widget.friendId}'),
+        onPressed: () =>
+            context.push('/createExpense/friend/${widget.friendId}'),
         child: const Icon(Icons.add),
       ),
       body: _isLoading
@@ -115,8 +126,14 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
                       gradient: balance == 0
                           ? AppTheme.cardGradient
                           : balance > 0
-                              ? const LinearGradient(colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)])
-                              : const LinearGradient(colors: [Color(0xFFB71C1C), Color(0xFFC62828)]),
+                              ? const LinearGradient(colors: [
+                                  Color(0xFF1B5E20),
+                                  Color(0xFF2E7D32)
+                                ])
+                              : const LinearGradient(colors: [
+                                  Color(0xFFB71C1C),
+                                  Color(0xFFC62828)
+                                ]),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
@@ -127,7 +144,8 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
                               : balance > 0
                                   ? '$friendName owes you'
                                   : 'You owe $friendName',
-                          style: TextStyle(color: Colors.white.withOpacity(0.8)),
+                          style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.8)),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -163,17 +181,23 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
                           child: ListTile(
                             onTap: () => context.push('/expense/${expense.id}'),
                             leading: CircleAvatar(
-                              backgroundColor: AppTheme.primaryColor.withOpacity(0.15),
-                              child: const Icon(Icons.receipt, color: AppTheme.primaryColor, size: 20),
+                              backgroundColor:
+                                  AppTheme.primaryColor.withValues(alpha: 0.15),
+                              child: const Icon(Icons.receipt,
+                                  color: AppTheme.primaryColor, size: 20),
                             ),
-                            title: Text(expense.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                            title: Text(expense.title,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w600)),
                             subtitle: Text(
                               AppDateUtils.formatDateString(expense.date ?? ''),
-                              style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                              style: const TextStyle(
+                                  color: AppTheme.textSecondary, fontSize: 12),
                             ),
                             trailing: Text(
                               AppUtils.formatCurrency(expense.amount),
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ),
                         )),

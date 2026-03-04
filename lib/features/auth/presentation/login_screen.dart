@@ -144,8 +144,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   String _getErrorMessage(Exception e) {
     final msg = e.toString().toLowerCase();
-    if (msg.contains('user-not-found'))
+    if (msg.contains('user-not-found')) {
       return 'No account found with this email';
+    }
     if (msg.contains('wrong-password')) return 'Incorrect password';
     if (msg.contains('email-already-in-use')) return 'Email already registered';
     if (msg.contains('weak-password')) return 'Password is too weak';
@@ -232,7 +233,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.primaryColor.withOpacity(0.4),
+                color: AppTheme.primaryColor.withValues(alpha: 0.4),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -256,7 +257,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           'Split bills smartly with AI.\nTrack expenses, settle dues, stay balanced.',
           style: TextStyle(
             fontSize: 18,
-            color: Colors.white.withOpacity(0.6),
+            color: Colors.white.withValues(alpha: 0.6),
             height: 1.5,
           ),
         ),
@@ -275,7 +276,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.primaryColor.withOpacity(0.4),
+                color: AppTheme.primaryColor.withValues(alpha: 0.4),
                 blurRadius: 16,
                 offset: const Offset(0, 6),
               ),
@@ -301,14 +302,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor.withOpacity(0.8),
+        color: AppTheme.surfaceColor.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: Colors.white.withOpacity(0.08),
+          color: Colors.white.withValues(alpha: 0.08),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 30,
             offset: const Offset(0, 10),
           ),
@@ -340,7 +341,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       ? 'Sign in to continue'
                       : 'Sign up to get started',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white.withValues(alpha: 0.5),
                 fontSize: 14,
               ),
             ),
@@ -351,10 +352,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppTheme.errorColor.withOpacity(0.1),
+                  color: AppTheme.errorColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border:
-                      Border.all(color: AppTheme.errorColor.withOpacity(0.3)),
+                      Border.all(color: AppTheme.errorColor.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
@@ -512,20 +513,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               Row(
                 children: [
                   Expanded(
-                    child: Divider(color: Colors.white.withOpacity(0.15)),
+                    child: Divider(color: Colors.white.withValues(alpha: 0.15)),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
                       'OR',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.4),
+                        color: Colors.white.withValues(alpha: 0.4),
                         fontSize: 12,
                       ),
                     ),
                   ),
                   Expanded(
-                    child: Divider(color: Colors.white.withOpacity(0.15)),
+                    child: Divider(color: Colors.white.withValues(alpha: 0.15)),
                   ),
                 ],
               ),
@@ -537,7 +538,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   icon: const Icon(Icons.g_mobiledata, size: 24),
                   label: const Text('Continue with Google'),
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.white.withOpacity(0.2)),
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -559,7 +560,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           ? "Don't have an account?"
                           : 'Already have an account?',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
+                    color: Colors.white.withValues(alpha: 0.5),
                     fontSize: 14,
                   ),
                 ),

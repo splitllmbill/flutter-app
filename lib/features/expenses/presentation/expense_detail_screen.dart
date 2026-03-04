@@ -109,7 +109,7 @@ class _ExpenseDetailScreenState extends ConsumerState<ExpenseDetailScreen> {
                             decoration: BoxDecoration(
                               gradient: AppTheme.cardGradient,
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Colors.white.withOpacity(0.05)),
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,7 +120,7 @@ class _ExpenseDetailScreenState extends ConsumerState<ExpenseDetailScreen> {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 12, vertical: 6),
                                       decoration: BoxDecoration(
-                                        color: AppTheme.primaryColor.withOpacity(0.15),
+                                        color: AppTheme.primaryColor.withValues(alpha: 0.15),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
@@ -183,7 +183,7 @@ class _ExpenseDetailScreenState extends ConsumerState<ExpenseDetailScreen> {
                                   margin: const EdgeInsets.only(bottom: 8),
                                   child: ListTile(
                                     leading: CircleAvatar(
-                                      backgroundColor: AppTheme.primaryColor.withOpacity(0.15),
+                                      backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.15),
                                       child: Text(
                                         AppUtils.getInitials(share.userName ?? 'U'),
                                         style: const TextStyle(

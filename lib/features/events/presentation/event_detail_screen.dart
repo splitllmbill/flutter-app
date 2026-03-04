@@ -154,7 +154,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen>
             child: ListTile(
               onTap: () => context.push('/expense/${expense.id}'),
               leading: CircleAvatar(
-                backgroundColor: AppTheme.primaryColor.withOpacity(0.15),
+                backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.15),
                 child: Icon(
                   _getCategoryIcon(expense.category),
                   color: AppTheme.primaryColor,
@@ -202,7 +202,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen>
           child: ListTile(
             leading: CircleAvatar(
               backgroundColor: (isPositive ? AppTheme.successColor : AppTheme.errorColor)
-                  .withOpacity(0.15),
+                  .withValues(alpha: 0.15),
               child: Icon(
                 isPositive ? Icons.arrow_downward : Icons.arrow_upward,
                 color: isPositive ? AppTheme.successColor : AppTheme.errorColor,

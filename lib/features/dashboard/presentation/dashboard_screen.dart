@@ -114,7 +114,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 64, color: AppTheme.errorColor.withOpacity(0.5)),
+          Icon(Icons.error_outline, size: 64, color: AppTheme.errorColor.withValues(alpha: 0.5)),
           const SizedBox(height: 16),
           Text(_errorMessage!, style: const TextStyle(color: AppTheme.textSecondary)),
           const SizedBox(height: 16),
@@ -353,7 +353,7 @@ class _SummaryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: gradient.colors.first.withOpacity(0.3),
+            color: gradient.colors.first.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -362,12 +362,12 @@ class _SummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: Colors.white.withOpacity(0.8), size: 28),
+          Icon(icon, color: Colors.white.withValues(alpha: 0.8), size: 28),
           const SizedBox(height: 12),
           Text(
             title,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
@@ -408,7 +408,7 @@ class _QuickActionCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
         ),
         child: Column(
           children: [

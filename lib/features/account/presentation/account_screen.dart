@@ -55,6 +55,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         'name': _nameController.text.trim(),
         'upiId': _upiController.text.trim(),
       });
+      if (!mounted) return;
       setState(() => _isEditing = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -62,6 +63,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
             backgroundColor: AppTheme.successColor),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to update')),
       );
@@ -242,15 +244,15 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                         decoration: BoxDecoration(
                           gradient: AppTheme.cardGradient,
                           borderRadius: BorderRadius.circular(20),
-                          border:
-                              Border.all(color: Colors.white.withOpacity(0.05)),
+                          border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.05)),
                         ),
                         child: Column(
                           children: [
                             CircleAvatar(
                               radius: 40,
                               backgroundColor:
-                                  AppTheme.primaryColor.withOpacity(0.2),
+                                  AppTheme.primaryColor.withValues(alpha: 0.2),
                               child: Text(
                                 (firebaseUser?.displayName ??
                                         _account?['name'] ??
@@ -377,7 +379,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
       child: ListTile(
         onTap: onTap,
         leading: CircleAvatar(
-          backgroundColor: AppTheme.primaryColor.withOpacity(0.15),
+          backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.15),
           child: Icon(icon, color: AppTheme.primaryColor, size: 20),
         ),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),

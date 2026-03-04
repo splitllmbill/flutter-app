@@ -51,6 +51,7 @@ class AuthService {
 
   /// Sign in with Google.
   Future<UserCredential> signInWithGoogle() async {
+    // ignore: unnecessary_nullable_for_final_variable_declarations
     final GoogleSignInAccount? googleUser = await _googleSignIn.authenticate();
     if (googleUser == null) {
       throw FirebaseAuthException(
@@ -59,8 +60,7 @@ class AuthService {
       );
     }
 
-    final GoogleSignInAuthentication googleAuth =
-        await googleUser.authentication;
+    final GoogleSignInAuthentication googleAuth = googleUser.authentication;
     final GoogleSignInClientAuthorization? authZ =
         await googleUser.authorizationClient.authorizationForScopes([]);
 

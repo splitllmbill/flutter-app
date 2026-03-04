@@ -171,9 +171,12 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                             labelText: 'Expense Title',
                             prefixIcon: Icon(Icons.receipt),
                           ),
-                          validator: (v) => v == null || v.isEmpty
-                              ? 'Title is required'
-                              : null,
+                          validator: (v) {
+                            if (v == null || v.isEmpty) {
+                              return 'Title is required';
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
@@ -185,10 +188,12 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                             prefixIcon: Icon(Icons.currency_rupee),
                           ),
                           validator: (v) {
-                            if (v == null || v.isEmpty)
+                            if (v == null || v.isEmpty) {
                               return 'Amount is required';
-                            if (double.tryParse(v) == null)
+                            }
+                            if (double.tryParse(v) == null) {
                               return 'Invalid amount';
+                            }
                             return null;
                           },
                         ),
@@ -196,7 +201,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
 
                         // Category dropdown
                         DropdownButtonFormField<String>(
-                          value: _selectedCategory,
+                          initialValue: _selectedCategory,
                           decoration: const InputDecoration(
                             labelText: 'Category',
                             prefixIcon: Icon(Icons.category),
@@ -214,7 +219,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                         // Paid by dropdown (if applicable)
                         if (_possibleUsers.isNotEmpty) ...[
                           DropdownButtonFormField<String>(
-                            value: _selectedPaidBy,
+                            initialValue: _selectedPaidBy,
                             decoration: const InputDecoration(
                               labelText: 'Paid By',
                               prefixIcon: Icon(Icons.person),

@@ -39,9 +39,6 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
-# Firebase
-lib/firebase_options.dart
-
 # Environment
 .env
 .env.*

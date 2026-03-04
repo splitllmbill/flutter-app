@@ -19,14 +19,20 @@ class _ShareBillScreenState extends ConsumerState<ShareBillScreen> {
   final _amountController = TextEditingController();
   String _splitType = 'equal';
   String _selectedCategory = 'General';
-  List<Map<String, dynamic>> _users = [];
-  Map<String, double> _customAmounts = {};
-  Map<String, double> _percentages = {};
+  final List<Map<String, dynamic>> _users = [];
+  final Map<String, double> _customAmounts = {};
+  final Map<String, double> _percentages = {};
   bool _isLoading = false;
 
   final _categories = [
-    'General', 'Food', 'Transport', 'Accommodation',
-    'Shopping', 'Entertainment', 'Utilities', 'Other',
+    'General',
+    'Food',
+    'Transport',
+    'Accommodation',
+    'Shopping',
+    'Entertainment',
+    'Utilities',
+    'Other',
   ];
 
   @override
@@ -61,7 +67,8 @@ class _ShareBillScreenState extends ConsumerState<ShareBillScreen> {
         }).toList();
       } else if (_splitType == 'percentage') {
         shares = _users.map((u) {
-          final pct = _percentages[u['id']?.toString() ?? u['_id']?.toString()] ?? 0;
+          final pct =
+              _percentages[u['id']?.toString() ?? u['_id']?.toString()] ?? 0;
           return {
             'userId': u['id'] ?? u['_id'],
             'amount': totalAmount * pct / 100,
@@ -70,7 +77,8 @@ class _ShareBillScreenState extends ConsumerState<ShareBillScreen> {
         }).toList();
       } else {
         shares = _users.map((u) {
-          final amt = _customAmounts[u['id']?.toString() ?? u['_id']?.toString()] ?? 0;
+          final amt =
+              _customAmounts[u['id']?.toString() ?? u['_id']?.toString()] ?? 0;
           return {'userId': u['id'] ?? u['_id'], 'amount': amt};
         }).toList();
       }
@@ -130,12 +138,14 @@ class _ShareBillScreenState extends ConsumerState<ShareBillScreen> {
                       labelText: 'Bill Title',
                       prefixIcon: Icon(Icons.receipt),
                     ),
-                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    validator: (v) =>
+                        v == null || v.isEmpty ? 'Required' : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _amountController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(
                       labelText: 'Total Amount',
                       prefixIcon: Icon(Icons.currency_rupee),
@@ -148,7 +158,7 @@ class _ShareBillScreenState extends ConsumerState<ShareBillScreen> {
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    value: _selectedCategory,
+                    initialValue: _selectedCategory,
                     decoration: const InputDecoration(
                       labelText: 'Category',
                       prefixIcon: Icon(Icons.category),
@@ -157,48 +167,73 @@ class _ShareBillScreenState extends ConsumerState<ShareBillScreen> {
                     items: _categories
                         .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                         .toList(),
-                    onChanged: (v) => setState(() => _selectedCategory = v ?? 'General'),
+                    onChanged: (v) =>
+                        setState(() => _selectedCategory = v ?? 'General'),
                   ),
                   const SizedBox(height: 24),
 
                   // Split type selector
-                  const Text('Split Type', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  const Text('Split Type',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
                   SegmentedButton<String>(
                     segments: const [
-                      ButtonSegment(value: 'equal', label: Text('Equal'), icon: Icon(Icons.balance)),
-                      ButtonSegment(value: 'percentage', label: Text('Percentage'), icon: Icon(Icons.percent)),
-                      ButtonSegment(value: 'custom', label: Text('Custom'), icon: Icon(Icons.tune)),
+                      ButtonSegment(
+                          value: 'equal',
+                          label: Text('Equal'),
+                          icon: Icon(Icons.balance)),
+                      ButtonSegment(
+                          value: 'percentage',
+                          label: Text('Percentage'),
+                          icon: Icon(Icons.percent)),
+                      ButtonSegment(
+                          value: 'custom',
+                          label: Text('Custom'),
+                          icon: Icon(Icons.tune)),
                     ],
                     selected: {_splitType},
-                    onSelectionChanged: (val) => setState(() => _splitType = val.first),
+                    onSelectionChanged: (val) =>
+                        setState(() => _splitType = val.first),
                   ),
                   const SizedBox(height: 24),
 
                   // Members display
                   if (_users.isNotEmpty) ...[
-                    const Text('Members', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    const Text('Members',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
                     ..._users.map((user) {
-                      final userId = user['id']?.toString() ?? user['_id']?.toString() ?? '';
+                      final userId = user['id']?.toString() ??
+                          user['_id']?.toString() ??
+                          '';
                       return Card(
                         margin: const EdgeInsets.only(bottom: 8),
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: AppTheme.primaryColor.withOpacity(0.15),
+                            backgroundColor:
+                                AppTheme.primaryColor.withValues(alpha: 0.15),
                             child: Text(
                               AppUtils.getInitials(user['name'] ?? 'U'),
-                              style: const TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                  color: AppTheme.primaryColor,
+                                  fontWeight: FontWeight.bold),
                             ),
                           ),
-                          title: Text(user['name'] ?? user['email'] ?? 'Unknown'),
+                          title:
+                              Text(user['name'] ?? user['email'] ?? 'Unknown'),
                           trailing: _splitType != 'equal'
                               ? SizedBox(
                                   width: 100,
                                   child: TextFormField(
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                            decimal: true),
                                     decoration: InputDecoration(
-                                      suffixText: _splitType == 'percentage' ? '%' : '₹',
+                                      suffixText: _splitType == 'percentage'
+                                          ? '%'
+                                          : '₹',
                                       isDense: true,
                                     ),
                                     onChanged: (v) {
@@ -224,8 +259,10 @@ class _ShareBillScreenState extends ConsumerState<ShareBillScreen> {
                       onPressed: _isLoading ? null : _submit,
                       child: _isLoading
                           ? const SizedBox(
-                              width: 24, height: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white),
                             )
                           : const Text('Share Bill'),
                     ),

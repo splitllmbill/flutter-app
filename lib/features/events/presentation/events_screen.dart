@@ -91,7 +91,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.event_outlined,
-              size: 80, color: AppTheme.primaryColor.withOpacity(0.3)),
+              size: 80, color: AppTheme.primaryColor.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
           const Text('No events yet',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
@@ -131,7 +131,7 @@ class _EventCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.15),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
