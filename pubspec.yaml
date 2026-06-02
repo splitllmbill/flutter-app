@@ -20,9 +20,8 @@ dependencies:
   # HTTP Client
   dio: ^5.4.0
 
-  # Firebase
-  firebase_core: ^4.4.0
-  firebase_auth: ^6.1.4
+  # Supabase (Auth and Database)
+  supabase_flutter: ^2.6.0
   google_sign_in: ^7.2.0
 
   # UI
@@ -31,11 +30,12 @@ dependencies:
   google_fonts: ^8.0.2
 
   # Utilities
+  flutter_dotenv: ^5.1.0
   intl: ^0.20.2
   shared_preferences: ^2.2.2
   url_launcher: ^6.2.3
   image_picker: ^1.0.7
-  file_picker: ^10.3.10
+  file_picker: ^11.0.2
 
   # Icons
   cupertino_icons: ^1.0.6
@@ -52,3 +52,6 @@ flutter:
 
   assets:
     - assets/images/
+    # Runtime configuration (Supabase/API). Generated from .env.example or from
+    # the host's environment variables (see vercel_build.sh). Git-ignored.
+    - .env

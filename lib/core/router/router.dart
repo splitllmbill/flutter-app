@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers.dart';
 import '../widgets/shell_screen.dart';
+import '../../features/landing/presentation/landing_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/events/presentation/events_screen.dart';
@@ -17,6 +18,7 @@ import '../../features/friends/presentation/add_friend_screen.dart';
 import '../../features/personal_expenses/presentation/personal_expenses_screen.dart';
 import '../../features/account/presentation/account_screen.dart';
 import '../../features/settlements/presentation/payment_screen.dart';
+import '../../features/admin/presentation/admin_dashboard_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -26,25 +28,32 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/login',
+    initialLocation: '/landing',
     redirect: (context, state) {
       final isLoggingIn = state.matchedLocation == '/login';
+      final isLanding = state.matchedLocation == '/landing';
       final isPayment = state.matchedLocation.startsWith('/payments');
 
       // Allow payment pages without auth
       if (isPayment) return null;
 
-      if (!isAuthenticated && !isLoggingIn) {
-        return '/login';
+      if (!isAuthenticated && !isLoggingIn && !isLanding) {
+        return '/landing';
       }
 
-      if (isAuthenticated && isLoggingIn) {
+      if (isAuthenticated && (isLoggingIn || isLanding)) {
         return '/home';
       }
 
       return null;
     },
     routes: [
+      // Landing route
+      GoRoute(
+        path: '/landing',
+        builder: (context, state) => const LandingScreen(),
+      ),
+
       // Login route (no shell)
       GoRoute(
         path: '/login',
@@ -123,6 +132,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
           GoRoute(
+            path: '/createExpense',
+            builder: (context, state) => const CreateExpenseScreen(),
+          ),
+          GoRoute(
             path: '/createExpense/:type/:id',
             builder: (context, state) => CreateExpenseScreen(
               type: state.pathParameters['type'] ?? '',
@@ -145,6 +158,12 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/shareBill/:expenseType',
             builder: (context, state) => ShareBillScreen(
               expenseType: state.pathParameters['expenseType'] ?? '',
+            ),
+          ),
+          GoRoute(
+            path: '/admin',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: AdminDashboardScreen(),
             ),
           ),
         ],

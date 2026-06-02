@@ -48,7 +48,12 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Events')),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/create-event'),
+        onPressed: () async {
+          final result = await context.push('/create-event');
+          if (result == true) {
+            _loadEvents();
+          }
+        },
         icon: const Icon(Icons.add),
         label: const Text('New Event'),
       ),
@@ -77,8 +82,12 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                         itemCount: _events.length,
                         itemBuilder: (context, index) => _EventCard(
                           event: _events[index],
-                          onTap: () =>
-                              context.push('/event/${_events[index].id}'),
+                          onTap: () async {
+                            final result = await context.push('/event/${_events[index].id}');
+                            if (result == true) {
+                              _loadEvents();
+                            }
+                          },
                         ),
                       ),
                     ),
@@ -100,7 +109,12 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
               style: TextStyle(color: AppTheme.textSecondary)),
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            onPressed: () => context.push('/create-event'),
+            onPressed: () async {
+              final result = await context.push('/create-event');
+              if (result == true) {
+                _loadEvents();
+              }
+            },
             icon: const Icon(Icons.add),
             label: const Text('Create Event'),
           ),

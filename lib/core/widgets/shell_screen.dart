@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../utils/app_theme.dart';
+import '../providers.dart';
 
 /// App shell with responsive navigation (side nav on desktop, bottom nav on mobile).
-class ShellScreen extends StatelessWidget {
+class ShellScreen extends ConsumerWidget {
   final Widget child;
 
   const ShellScreen({super.key, required this.child});
@@ -19,6 +21,7 @@ class ShellScreen extends StatelessWidget {
     }
     if (location.startsWith('/personal-expenses')) return 3;
     if (location.startsWith('/user-account')) return 4;
+    if (location.startsWith('/admin')) return 5;
     return 0;
   }
 
@@ -34,13 +37,17 @@ class ShellScreen extends StatelessWidget {
         context.go('/personal-expenses');
       case 4:
         context.go('/user-account');
+      case 5:
+        context.go('/admin');
     }
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final selectedIndex = _getSelectedIndex(context);
     final isWideScreen = MediaQuery.of(context).size.width >= 800;
+    final accountAsync = ref.watch(userAccountProvider);
+    final isAdmin = accountAsync.value?['role'] == 'admin';
 
     if (isWideScreen) {
       return Scaffold(
@@ -48,6 +55,7 @@ class ShellScreen extends StatelessWidget {
           children: [
             _SideNavBar(
               selectedIndex: selectedIndex,
+              isAdmin: isAdmin,
               onItemTapped: (index) => _onItemTapped(context, index),
             ),
             const VerticalDivider(width: 1),
@@ -61,6 +69,7 @@ class ShellScreen extends StatelessWidget {
       body: child,
       bottomNavigationBar: _BottomNavBar(
         selectedIndex: selectedIndex,
+        isAdmin: isAdmin,
         onItemTapped: (index) => _onItemTapped(context, index),
       ),
     );
@@ -69,10 +78,12 @@ class ShellScreen extends StatelessWidget {
 
 class _SideNavBar extends StatelessWidget {
   final int selectedIndex;
+  final bool isAdmin;
   final ValueChanged<int> onItemTapped;
 
   const _SideNavBar({
     required this.selectedIndex,
+    required this.isAdmin,
     required this.onItemTapped,
   });
 
@@ -113,32 +124,38 @@ class _SideNavBar extends StatelessWidget {
         ),
       ),
       extended: MediaQuery.of(context).size.width >= 1200,
-      destinations: const [
-        NavigationRailDestination(
+      destinations: [
+        const NavigationRailDestination(
           icon: Icon(Icons.dashboard_outlined),
           selectedIcon: Icon(Icons.dashboard_rounded),
           label: Text('Home'),
         ),
-        NavigationRailDestination(
+        const NavigationRailDestination(
           icon: Icon(Icons.event_outlined),
           selectedIcon: Icon(Icons.event_rounded),
           label: Text('Events'),
         ),
-        NavigationRailDestination(
+        const NavigationRailDestination(
           icon: Icon(Icons.people_outline),
           selectedIcon: Icon(Icons.people_rounded),
           label: Text('Friends'),
         ),
-        NavigationRailDestination(
+        const NavigationRailDestination(
           icon: Icon(Icons.account_balance_wallet_outlined),
           selectedIcon: Icon(Icons.account_balance_wallet_rounded),
           label: Text('Expenses'),
         ),
-        NavigationRailDestination(
+        const NavigationRailDestination(
           icon: Icon(Icons.person_outline),
           selectedIcon: Icon(Icons.person_rounded),
           label: Text('Account'),
         ),
+        if (isAdmin)
+          const NavigationRailDestination(
+            icon: Icon(Icons.admin_panel_settings_outlined),
+            selectedIcon: Icon(Icons.admin_panel_settings),
+            label: Text('Admin'),
+          ),
       ],
     );
   }
@@ -146,10 +163,12 @@ class _SideNavBar extends StatelessWidget {
 
 class _BottomNavBar extends StatelessWidget {
   final int selectedIndex;
+  final bool isAdmin;
   final ValueChanged<int> onItemTapped;
 
   const _BottomNavBar({
     required this.selectedIndex,
+    required this.isAdmin,
     required this.onItemTapped,
   });
 
@@ -172,32 +191,38 @@ class _BottomNavBar extends StatelessWidget {
         backgroundColor: Colors.transparent,
         indicatorColor: AppTheme.primaryColor.withValues(alpha: 0.2),
         height: 65,
-        destinations: const [
-          NavigationDestination(
+        destinations: [
+          const NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
             selectedIcon: Icon(Icons.dashboard_rounded),
             label: 'Home',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.event_outlined),
             selectedIcon: Icon(Icons.event_rounded),
             label: 'Events',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.people_outline),
             selectedIcon: Icon(Icons.people_rounded),
             label: 'Friends',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.account_balance_wallet_outlined),
             selectedIcon: Icon(Icons.account_balance_wallet_rounded),
             label: 'Expenses',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.person_outline),
             selectedIcon: Icon(Icons.person_rounded),
             label: 'Account',
           ),
+          if (isAdmin)
+            const NavigationDestination(
+              icon: Icon(Icons.admin_panel_settings_outlined),
+              selectedIcon: Icon(Icons.admin_panel_settings),
+              label: 'Admin',
+            ),
         ],
       ),
     );

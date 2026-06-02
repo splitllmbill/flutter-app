@@ -1,97 +1,110 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Firebase Authentication service abstraction.
+/// App user mapping
+class AppUser {
+  final String uid;
+  final String email;
+  final String? displayName;
+
+  AppUser({
+    required this.uid,
+    required this.email,
+    this.displayName,
+  });
+
+  factory AppUser.fromSupabaseUser(User user) {
+    return AppUser(
+      uid: user.id,
+      email: user.email ?? '',
+      displayName: user.userMetadata?['full_name'] ?? user.userMetadata?['name'],
+    );
+  }
+}
+
+/// Supabase Authentication service abstraction.
 class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  final SupabaseClient _supabase = Supabase.instance.client;
 
   /// Stream of auth state changes.
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
+  Stream<AppUser?> get authStateChanges {
+    return _supabase.auth.onAuthStateChange.map((event) {
+      final session = event.session;
+      if (session == null) {
+        return null;
+      }
+      return AppUser.fromSupabaseUser(session.user);
+    });
+  }
 
   /// Current user.
-  User? get currentUser => _auth.currentUser;
+  AppUser? get currentUser {
+    final user = _supabase.auth.currentUser;
+    return user != null ? AppUser.fromSupabaseUser(user) : null;
+  }
 
   /// Whether user is logged in.
-  bool get isLoggedIn => _auth.currentUser != null;
+  bool get isLoggedIn => _supabase.auth.currentUser != null;
 
-  /// Get Firebase ID token for API calls.
+  /// Get Supabase JWT token for API calls.
   Future<String?> getIdToken({bool forceRefresh = false}) async {
-    return await _auth.currentUser?.getIdToken(forceRefresh);
+    final session = _supabase.auth.currentSession;
+    if (session == null) return null;
+    
+    // In Supabase, we can use the access token directly as the JWT
+    // If it's expired, the client usually auto-refreshes it.
+    // We'll just return the session's access token.
+    return session.accessToken;
   }
 
   /// Sign in with email and password.
-  Future<UserCredential> signInWithEmail({
+  Future<AuthResponse> signInWithEmail({
     required String email,
     required String password,
   }) async {
-    return await _auth.signInWithEmailAndPassword(
+    return await _supabase.auth.signInWithPassword(
       email: email,
       password: password,
     );
   }
 
   /// Sign up with email and password.
-  Future<UserCredential> signUpWithEmail({
+  Future<AuthResponse> signUpWithEmail({
     required String email,
     required String password,
     String? displayName,
   }) async {
-    final credential = await _auth.createUserWithEmailAndPassword(
+    return await _supabase.auth.signUp(
       email: email,
       password: password,
+      data: displayName != null ? {'full_name': displayName} : null,
     );
-
-    if (displayName != null) {
-      await credential.user?.updateDisplayName(displayName);
-    }
-
-    return credential;
   }
 
-  /// Sign in with Google.
-  Future<UserCredential> signInWithGoogle() async {
-    // ignore: unnecessary_nullable_for_final_variable_declarations
-    final GoogleSignInAccount? googleUser = await _googleSignIn.authenticate();
-    if (googleUser == null) {
-      throw FirebaseAuthException(
-        code: 'sign-in-cancelled',
-        message: 'Google sign-in was cancelled',
-      );
-    }
-
-    final GoogleSignInAuthentication googleAuth = googleUser.authentication;
-    final GoogleSignInClientAuthorization? authZ =
-        await googleUser.authorizationClient.authorizationForScopes([]);
-
-    final credential = GoogleAuthProvider.credential(
-      accessToken: authZ?.accessToken,
-      idToken: googleAuth.idToken,
+  /// Sign in with Google (OAuth).
+  Future<bool> signInWithGoogle() async {
+    return await _supabase.auth.signInWithOAuth(
+      OAuthProvider.google,
+      redirectTo: 'http://localhost:8080', // Replace with your web url/app scheme
     );
-
-    return await _auth.signInWithCredential(credential);
   }
 
   /// Send password reset email.
   Future<void> sendPasswordResetEmail(String email) async {
-    await _auth.sendPasswordResetEmail(email: email);
+    await _supabase.auth.resetPasswordForEmail(email);
   }
 
   /// Update password (requires recent auth).
   Future<void> updatePassword(String newPassword) async {
-    await _auth.currentUser?.updatePassword(newPassword);
+    await _supabase.auth.updateUser(UserAttributes(password: newPassword));
   }
 
   /// Sign out.
   Future<void> signOut() async {
-    await Future.wait([
-      _auth.signOut(),
-      _googleSignIn.signOut(),
-    ]);
+    await _supabase.auth.signOut();
   }
 }
 
-/// Custom exception for Firebase Auth errors
+/// Custom exception mapping to old FirebaseAuthException so UI code still works
 class FirebaseAuthException implements Exception {
   final String code;
   final String message;

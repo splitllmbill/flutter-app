@@ -72,9 +72,9 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
     try {
       final api = ref.read(apiClientProvider);
       final data = {
-        'title': _titleController.text.trim(),
+        'eventName': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
-        'members': _memberEmails,
+        'users': _memberEmails,
       };
 
       if (_isEditing) {
@@ -91,7 +91,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
             backgroundColor: AppTheme.successColor,
           ),
         );
-        context.go('/events');
+        context.pop(true);
       }
     } catch (e) {
       if (mounted) {

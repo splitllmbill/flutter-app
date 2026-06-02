@@ -106,7 +106,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
     try {
       final api = ref.read(apiClientProvider);
       final data = {
-        'title': _titleController.text.trim(),
+        'expenseName': _titleController.text.trim(),
         'amount': double.parse(_amountController.text.trim()),
         'category': _selectedCategory,
         'description': _descriptionController.text.trim(),
@@ -130,7 +130,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
             backgroundColor: AppTheme.successColor,
           ),
         );
-        context.pop();
+        context.pop(true);
       }
     } catch (e) {
       if (mounted) {
@@ -201,7 +201,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
 
                         // Category dropdown
                         DropdownButtonFormField<String>(
-                          initialValue: _selectedCategory,
+                          value: _selectedCategory,
                           decoration: const InputDecoration(
                             labelText: 'Category',
                             prefixIcon: Icon(Icons.category),
@@ -219,7 +219,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                         // Paid by dropdown (if applicable)
                         if (_possibleUsers.isNotEmpty) ...[
                           DropdownButtonFormField<String>(
-                            initialValue: _selectedPaidBy,
+                            value: _selectedPaidBy,
                             decoration: const InputDecoration(
                               labelText: 'Paid By',
                               prefixIcon: Icon(Icons.person),

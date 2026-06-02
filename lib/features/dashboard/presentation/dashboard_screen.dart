@@ -31,8 +31,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     try {
       final apiClient = ref.read(apiClientProvider);
       final now = DateTime.now();
-      final startDate = DateTime(now.year, now.month, 1).toIso8601String();
+      String startDate;
       final endDate = now.toIso8601String();
+      
+      switch (_selectedPeriod) {
+        case 'This Week':
+          // Start of the week (Monday)
+          final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+          startDate = DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day).toIso8601String();
+          break;
+        case 'This Year':
+          startDate = DateTime(now.year, 1, 1).toIso8601String();
+          break;
+        case 'All Time':
+          startDate = DateTime(2000, 1, 1).toIso8601String(); // Far past
+          break;
+        case 'This Month':
+        default:
+          startDate = DateTime(now.year, now.month, 1).toIso8601String();
+          break;
+      }
 
       final summaryRes = await apiClient.post('/db/dashboard/summary', data: {
         'startDate': startDate,

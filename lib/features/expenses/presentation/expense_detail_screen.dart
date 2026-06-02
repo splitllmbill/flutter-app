@@ -59,7 +59,7 @@ class _ExpenseDetailScreenState extends ConsumerState<ExpenseDetailScreen> {
     if (confirm == true) {
       try {
         await ref.read(apiClientProvider).delete('/db/expense/${widget.expenseId}');
-        if (mounted) context.pop();
+        if (mounted) context.pop(true);
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -82,7 +82,12 @@ class _ExpenseDetailScreenState extends ConsumerState<ExpenseDetailScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            onPressed: () => context.push('/expense/${widget.expenseId}/edit'),
+            onPressed: () async {
+              final result = await context.push('/expense/${widget.expenseId}/edit');
+              if (result == true) {
+                _loadExpense();
+              }
+            },
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline),

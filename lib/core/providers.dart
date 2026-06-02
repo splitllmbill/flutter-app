@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'services/auth_service.dart';
 import 'services/api_client.dart';
@@ -14,8 +13,8 @@ final apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient(authService: authService);
 });
 
-/// Firebase auth state stream.
-final authStateProvider = StreamProvider<User?>((ref) {
+/// Auth state stream.
+final authStateProvider = StreamProvider<AppUser?>((ref) {
   final authService = ref.watch(authServiceProvider);
   return authService.authStateChanges;
 });
@@ -24,4 +23,17 @@ final authStateProvider = StreamProvider<User?>((ref) {
 final isAuthenticatedProvider = Provider<bool>((ref) {
   final authState = ref.watch(authStateProvider);
   return authState.whenOrNull(data: (user) => user != null) ?? false;
+});
+
+/// Fetch user account from backend (including role).
+final userAccountProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
+  final isAuth = ref.watch(isAuthenticatedProvider);
+  if (!isAuth) return null;
+  final api = ref.watch(apiClientProvider);
+  try {
+    final res = await api.get('/db/user/account');
+    return res.data as Map<String, dynamic>;
+  } catch (_) {
+    return null;
+  }
 });

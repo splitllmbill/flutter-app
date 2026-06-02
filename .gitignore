@@ -43,3 +43,5 @@ app.*.map.json
 # Environment
 .env
 .env.*
+# ...but keep the committed template.
+!.env.example

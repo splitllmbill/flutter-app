@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/providers.dart';
 import '../../../core/models/expense_model.dart';
 import '../../../core/utils/app_theme.dart';
@@ -20,6 +21,7 @@ class _PersonalExpensesScreenState extends ConsumerState<PersonalExpensesScreen>
   final _chatController = TextEditingController();
   final _scrollController = ScrollController();
   final List<Map<String, dynamic>> _chatMessages = [];
+  String _activeModel = 'gemini-1.5-flash';
 
   @override
   void initState() {
@@ -39,10 +41,12 @@ class _PersonalExpensesScreenState extends ConsumerState<PersonalExpensesScreen>
     try {
       final api = ref.read(apiClientProvider);
       final response = await api.post('/db/expenses/personal', data: {});
+      final modelResponse = await api.get('/llm/active-model');
       final data = response.data;
       final list = data is List ? data : (data['expenses'] ?? []);
       setState(() {
         _expenses = list.map<ExpenseModel>((e) => ExpenseModel.fromJson(e)).toList();
+        _activeModel = modelResponse.data['activeModel'] ?? 'gemini-1.5-flash';
         _isLoading = false;
       });
     } catch (e) {
@@ -65,13 +69,31 @@ class _PersonalExpensesScreenState extends ConsumerState<PersonalExpensesScreen>
         'requestData': {'sentence': message},
       });
 
-      setState(() {
-        _chatMessages.add({
-          'role': 'assistant',
-          'content': 'Expense added: ${response.data['title'] ?? message}',
+      final llmOutput = response.data['llmoutput'];
+      if (llmOutput != null && llmOutput is List && llmOutput.isNotEmpty) {
+        final parsedExpense = llmOutput.first;
+        
+        final expensePayload = {
+          'expenseName': parsedExpense['expensename'] ?? parsedExpense['title'] ?? message,
+          'amount': double.tryParse(parsedExpense['amount']?.toString() ?? '0') ?? 0.0,
+          'category': parsedExpense['category'] ?? 'General',
+          'description': parsedExpense['description'] ?? message,
+          'type': 'normal',
+          'date': DateTime.now().toIso8601String(),
+        };
+        
+        await api.post('/db/expense', data: expensePayload);
+        
+        setState(() {
+          _chatMessages.add({
+            'role': 'assistant',
+            'content': 'Expense added: ${expensePayload['expenseName']} (${expensePayload['amount']})',
+          });
         });
-      });
-      _loadExpenses();
+        _loadExpenses();
+      } else {
+        throw Exception('Failed to parse LLM response');
+      }
     } catch (e) {
       setState(() {
         _chatMessages.add({
@@ -95,6 +117,18 @@ class _PersonalExpensesScreenState extends ConsumerState<PersonalExpensesScreen>
           ),
         ],
       ),
+      floatingActionButton: !_isAddingViaChatbot
+          ? FloatingActionButton.extended(
+              onPressed: () async {
+                final result = await context.push('/createExpense');
+                if (result == true) {
+                  _loadExpenses();
+                }
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('Manual Expense'),
+            )
+          : null,
       body: _isAddingViaChatbot ? _buildChatbot() : _buildExpensesList(),
     );
   }
@@ -173,9 +207,23 @@ class _PersonalExpensesScreenState extends ConsumerState<PersonalExpensesScreen>
               const Icon(Icons.auto_awesome, color: AppTheme.primaryColor, size: 20),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  'Tell me your expense naturally, e.g., "Spent 500 on dinner"',
-                  style: TextStyle(color: AppTheme.primaryColor.withValues(alpha: 0.8), fontSize: 13),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Using $_activeModel',
+                      style: TextStyle(
+                        color: AppTheme.primaryColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Tell me your expense naturally, e.g., "Spent 500 on dinner"',
+                      style: TextStyle(color: AppTheme.primaryColor.withValues(alpha: 0.8), fontSize: 13),
+                    ),
+                  ],
                 ),
               ),
             ],

@@ -1,6 +1,6 @@
 # SplitLLM — Flutter Web
 
-Production-grade Flutter Web rewrite of the SplitLLM React frontend. Features Firebase Authentication, Riverpod state management, and Dio-based API integration with the existing Flask backend.
+Production-grade Flutter Web rewrite of the SplitLLM React frontend. Features Supabase Authentication, Riverpod state management, and Dio-based API integration with the existing Flask backend.
 
 ## Tech Stack
 
@@ -10,18 +10,16 @@ Production-grade Flutter Web rewrite of the SplitLLM React frontend. Features Fi
 | State Management | Riverpod |
 | Routing | go_router |
 | HTTP Client | Dio |
-| Auth | Firebase Authentication |
+| Auth | Supabase Authentication |
+| Config | flutter_dotenv (`.env`) |
 | Charts | fl_chart |
-| Hosting | Firebase Hosting |
-| CI/CD | GitHub Actions |
+| Hosting / CI | Vercel |
 
 ## Getting Started
 
 ### Prerequisites
 
 - Flutter SDK ≥ 3.2.0
-- Firebase CLI (`npm install -g firebase-tools`)
-- FlutterFire CLI (`dart pub global activate flutterfire_cli`)
 
 ### 1. Clone & Install
 
@@ -30,80 +28,76 @@ cd flutter-app
 flutter pub get
 ```
 
-### 2. Firebase Setup
+### 2. Configure environment
 
-1. Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
-2. Enable **Authentication** → Sign-in methods:
-   - Email/Password
-   - Google
-3. Enable **Hosting**
-4. Configure Flutter:
+Runtime configuration lives in a `.env` file (loaded at startup via `flutter_dotenv`). Copy the template and fill in your values:
 
 ```bash
-flutterfire configure --project=YOUR_PROJECT_ID
+cp .env.example .env
 ```
 
-This generates `lib/firebase_options.dart` with your real config.
-
-5. Update `.firebaserc`:
-```json
-{
-  "projects": {
-    "default": "YOUR_PROJECT_ID"
-  }
-}
+```dotenv
+# .env
+SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+SUPABASE_ANON_KEY=sb_publishable_xxx        # publishable/anon key — safe in client
+API_BASE_URL=http://localhost:8081
 ```
+
+`.env` is git-ignored. To change Supabase or the backend URL later, just edit `.env`
+(local) or the Vercel Environment Variables (production) — no Dart code changes needed.
+
+> Resolution order for each value: `.env` → `--dart-define=KEY=value` → built-in default.
 
 ### 3. Run Locally
 
 ```bash
-# Development (default API: http://localhost:5000)
 flutter run -d chrome
-
-# With custom API URL
-flutter run -d chrome --dart-define=API_BASE_URL=https://your-api.domain.com
 ```
+
+`.env` is picked up automatically. You can still override per-run with
+`--dart-define=API_BASE_URL=https://your-api.domain.com` if you prefer.
 
 ### 4. Build for Production
 
 ```bash
-flutter build web \
-  --release \
-  --dart-define=API_BASE_URL=https://your-api.domain.com \
-  --web-renderer html \
-  --tree-shake-icons
+flutter build web --release --tree-shake-icons
 ```
 
-### 5. Deploy to Firebase Hosting
+Output is written to `build/web`.
 
-```bash
-firebase deploy --only hosting
-```
+## Deployment (Vercel)
 
-## GitHub Actions (CI/CD)
+The app deploys to Vercel via [`vercel.json`](./vercel.json) + [`vercel_build.sh`](./vercel_build.sh).
+Because Vercel's build image has no Flutter SDK, the build script installs Flutter,
+writes a `.env` from the project's Environment Variables, then runs `flutter build web`.
 
-Automatic deployment on push to `main`. Set these GitHub Secrets:
+**Setup:**
 
-| Secret | Description |
-|---|---|
-| `FIREBASE_SERVICE_ACCOUNT` | Firebase service account JSON key |
-| `PROJECT_ID` | Firebase project ID |
-| `API_BASE_URL` | Production API base URL |
+1. Import the repository into Vercel (Root Directory = `flutter-app`).
+2. Vercel reads `vercel.json` automatically:
+   - Build command: `bash vercel_build.sh`
+   - Output directory: `build/web`
+3. In **Project Settings → Environment Variables**, add:
 
-Generate the service account key:
-1. Go to Firebase Console → Project Settings → Service Accounts
-2. Click "Generate New Private Key"
-3. Copy the full JSON content into the `FIREBASE_SERVICE_ACCOUNT` secret
+   | Variable | Description |
+   |---|---|
+   | `SUPABASE_URL` | Supabase project URL |
+   | `SUPABASE_ANON_KEY` | Supabase publishable / anon key |
+   | `API_BASE_URL` | Production backend API base URL |
+
+4. Push to your default branch — Vercel builds and deploys automatically.
+
+`vercel.json` also configures SPA rewrites (all routes → `index.html`) and security
+headers (`X-Frame-Options`, `Strict-Transport-Security`, etc.).
 
 ## Project Structure
 
 ```
 lib/
-├── main.dart                          # Entry point
+├── main.dart                          # Entry point (loads .env, inits Supabase)
 ├── app.dart                           # MaterialApp.router
-├── firebase_options.dart              # Firebase config (generated)
 ├── core/
-│   ├── constants/constants.dart       # API URL, app constants
+│   ├── constants/constants.dart       # Config resolved from .env / dart-define
 │   ├── models/                        # Data models
 │   │   ├── user_model.dart
 │   │   ├── event_model.dart
@@ -111,8 +105,8 @@ lib/
 │   │   ├── share_model.dart
 │   │   └── filter_input_model.dart
 │   ├── services/
-│   │   ├── api_client.dart            # Dio + Firebase token interceptor
-│   │   └── auth_service.dart          # Firebase Auth abstraction
+│   │   ├── api_client.dart            # Dio + Supabase token interceptor
+│   │   └── auth_service.dart          # Supabase Auth abstraction
 │   ├── router/router.dart             # go_router with auth guard
 │   ├── providers.dart                 # Top-level Riverpod providers
 │   ├── utils/
@@ -143,40 +137,34 @@ lib/
 
 ## Environment Configuration
 
-Build with `--dart-define` for different environments:
+All runtime config (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `API_BASE_URL`) is resolved
+at startup, in order of precedence:
+
+1. the bundled `.env` file (`flutter_dotenv`),
+2. a compile-time `--dart-define=KEY=value`,
+3. a built-in default.
 
 ```bash
-# Development
-flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:5000
+# Local dev: values come from .env
+flutter run -d chrome
 
-# Staging
-flutter build web --dart-define=API_BASE_URL=https://staging-api.domain.com
+# Override a single value at build time
+flutter build web --release --dart-define=API_BASE_URL=https://api.domain.com
 
-# Production
-flutter build web --dart-define=API_BASE_URL=https://api.domain.com
+# Production: Vercel injects env vars → vercel_build.sh writes them into .env
 ```
 
 ## Backend Integration
 
-The Flutter app sends `Authorization: Bearer <firebase_id_token>` in all API requests. Your Flask backend must be updated to validate Firebase ID tokens:
-
-```python
-# pip install firebase-admin
-import firebase_admin
-from firebase_admin import auth as firebase_auth
-
-firebase_admin.initialize_app()
-
-def verify_firebase_token(id_token):
-    decoded = firebase_auth.verify_id_token(id_token)
-    return decoded['uid'], decoded['email']
-```
+The Flutter app sends `Authorization: Bearer <supabase_access_token>` in all API
+requests. The Flask backend validates the Supabase JWT (e.g. against the project's
+JWKS / JWT secret) and reads the user id from the `sub` claim.
 
 ## Migration Checklist
 
 - [x] Analyze React repository
 - [x] Create Flutter project structure
-- [x] Core infrastructure (Dio, Firebase Auth, Riverpod, go_router)
+- [x] Core infrastructure (Dio, Supabase Auth, Riverpod, go_router)
 - [x] Data models (User, Event, Expense, Share, FilterInput)
 - [x] Auth feature (Login, Sign-up, Google Sign-In, Forgot Password)
 - [x] Dashboard (Summary cards, Pie chart, Quick actions)
@@ -186,8 +174,7 @@ def verify_firebase_token(id_token):
 - [x] Personal Expenses (List, LLM Chatbot)
 - [x] Account (Profile, QR Code, UPI, Change Password, Sign Out)
 - [x] Payment page (Public payment with QR)
-- [x] Firebase config (firebase.json, .firebaserc)
-- [x] GitHub Actions CI/CD workflow
-- [ ] Run `flutterfire configure` (manual step)
-- [ ] Update Flask backend to validate Firebase tokens
-- [ ] Set GitHub Secrets for deployment
+- [x] Vercel config (vercel.json, vercel_build.sh)
+- [x] Environment config via `.env` (flutter_dotenv)
+- [ ] Update Flask backend to validate Supabase JWTs
+- [ ] Set Vercel Environment Variables for deployment

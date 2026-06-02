@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/providers.dart';
 import '../../../core/utils/app_theme.dart';
 
@@ -19,6 +20,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   bool _isEditing = false;
   final _nameController = TextEditingController();
   final _upiController = TextEditingController();
+  List<dynamic> _invitedUsers = [];
 
   @override
   void initState() {
@@ -38,25 +40,48 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     try {
       final api = ref.read(apiClientProvider);
       final response = await api.get('/db/user/account');
+      final invitesResponse = await api.get('/db/user/invites');
       setState(() {
         _account = response.data;
+        _invitedUsers = invitesResponse.data;
         _nameController.text = _account?['name'] ?? '';
         _upiController.text = _account?['upiId'] ?? _account?['upi_id'] ?? '';
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load account details: $e')),
+      );
     }
   }
 
   Future<void> _updateAccount() async {
     try {
+      final newName = _nameController.text.trim();
+      final newUpi = _upiController.text.trim();
+      
       await ref.read(apiClientProvider).put('/db/user/account', data: {
-        'name': _nameController.text.trim(),
-        'upiId': _upiController.text.trim(),
+        'name': newName,
+        'upiId': newUpi,
       });
+      
+      // Also update Supabase metadata so the auth provider sees the new name
+      try {
+        await Supabase.instance.client.auth.updateUser(
+          UserAttributes(data: {'full_name': newName}),
+        );
+      } catch (_) {}
+
       if (!mounted) return;
-      setState(() => _isEditing = false);
+      setState(() {
+        _isEditing = false;
+        if (_account != null) {
+          _account!['name'] = newName;
+          _account!['upiId'] = newUpi;
+        }
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Account updated!'),
@@ -139,10 +164,14 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (friendCode.isNotEmpty)
-              QrImageView(
-                data: friendCode,
-                size: 200,
-                backgroundColor: Colors.white,
+              SizedBox(
+                width: 200,
+                height: 200,
+                child: QrImageView(
+                  data: friendCode,
+                  size: 200,
+                  backgroundColor: Colors.white,
+                ),
               ),
             const SizedBox(height: 16),
             Container(
@@ -209,6 +238,83 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         await ref.read(apiClientProvider).post('/db/logout');
       } catch (_) {}
       await ref.read(authServiceProvider).signOut();
+    }
+  }
+
+  Future<void> _submitIssue() async {
+    final titleController = TextEditingController();
+    final descriptionController = TextEditingController();
+    String issueType = 'feature_request';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Submit Feedback'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: issueType,
+                      decoration: const InputDecoration(labelText: 'Type'),
+                      items: const [
+                        DropdownMenuItem(value: 'feature_request', child: Text('Feature Request')),
+                        DropdownMenuItem(value: 'issue', child: Text('Issue / Bug')),
+                      ],
+                      onChanged: (v) => setState(() => issueType = v!),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: titleController,
+                      decoration: const InputDecoration(labelText: 'Title'),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: descriptionController,
+                      decoration: const InputDecoration(labelText: 'Description'),
+                      maxLines: 3,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: const Text('Cancel')),
+                ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text('Submit')),
+              ],
+            );
+          }
+        );
+      },
+    );
+
+    if (confirmed == true && titleController.text.isNotEmpty) {
+      try {
+        await ref.read(apiClientProvider).post('/db/issues/', data: {
+          'type': issueType,
+          'title': titleController.text,
+          'description': descriptionController.text,
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Feedback submitted successfully!'),
+                backgroundColor: AppTheme.successColor),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to submit feedback')),
+          );
+        }
+      }
     }
   }
 
@@ -324,6 +430,44 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                         const SizedBox(height: 24),
                       ],
 
+                      // Invited Users
+                      if (_invitedUsers.isNotEmpty) ...[
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Invited Users (${_invitedUsers.length})',
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: AppTheme.cardColor,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                          ),
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _invitedUsers.length,
+                            separatorBuilder: (_, __) => Divider(color: Colors.white.withValues(alpha: 0.1)),
+                            itemBuilder: (context, index) {
+                              final user = _invitedUsers[index];
+                              return ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.2),
+                                  child: Text((user['name'] ?? 'U')[0].toUpperCase()),
+                                ),
+                                title: Text(user['name'] ?? 'Unknown'),
+                                subtitle: Text(user['email'] ?? ''),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+
                       // Actions
                       _buildActionTile(
                         icon: Icons.qr_code,
@@ -344,6 +488,12 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                             ? _upiController.text
                             : 'Not configured',
                         onTap: () => setState(() => _isEditing = true),
+                      ),
+                      _buildActionTile(
+                        icon: Icons.feedback_outlined,
+                        title: 'Submit Feedback',
+                        subtitle: 'Feature request or report an issue',
+                        onTap: _submitIssue,
                       ),
                       const SizedBox(height: 24),
                       SizedBox(

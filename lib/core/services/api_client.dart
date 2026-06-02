@@ -59,8 +59,12 @@ class ApiClient {
 
   void _onError(DioException err, ErrorInterceptorHandler handler) {
     if (err.response?.statusCode == 401) {
-      _authService.signOut();
-      onUnauthorized?.call();
+      final path = err.requestOptions.path;
+      // Do not force logout if the 401 came from login/signup routes
+      if (!path.contains('/login') && !path.contains('/signup')) {
+        _authService.signOut();
+        onUnauthorized?.call();
+      }
     }
     handler.next(err);
   }

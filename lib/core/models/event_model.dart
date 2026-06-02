@@ -20,11 +20,11 @@ class EventModel {
   factory EventModel.fromJson(Map<String, dynamic> json) {
     return EventModel(
       id: json['id']?.toString() ?? json['_id']?.toString(),
-      title: json['title'] ?? json['name'] ?? '',
+      title: json['eventName'] ?? json['title'] ?? json['name'] ?? '',
       description: json['description'],
-      members: json['members'] != null
-          ? List<String>.from(json['members'])
-          : null,
+      members: json['users'] != null
+          ? List<String>.from(json['users'])
+          : (json['members'] != null ? List<String>.from(json['members']) : null),
       createdBy: json['createdBy'] ?? json['created_by'],
       createdAt: json['createdAt'] ?? json['created_at'],
       totalExpense: (json['totalExpense'] ?? json['total_expense'])?.toDouble(),

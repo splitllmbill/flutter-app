@@ -103,7 +103,12 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen>
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            onPressed: () => context.push('/event/${widget.eventId}/edit'),
+            onPressed: () async {
+              final result = await context.push('/event/${widget.eventId}/edit');
+              if (result == true) {
+                _loadData();
+              }
+            },
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline),
@@ -120,7 +125,12 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen>
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/createExpense/event/${widget.eventId}'),
+        onPressed: () async {
+          final result = await context.push('/createExpense/event/${widget.eventId}');
+          if (result == true) {
+            _loadData();
+          }
+        },
         child: const Icon(Icons.add),
       ),
       body: _isLoading
@@ -152,7 +162,12 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen>
           return Card(
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
-              onTap: () => context.push('/expense/${expense.id}'),
+              onTap: () async {
+                final result = await context.push('/expense/${expense.id}');
+                if (result == true) {
+                  _loadData();
+                }
+              },
               leading: CircleAvatar(
                 backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.15),
                 child: Icon(

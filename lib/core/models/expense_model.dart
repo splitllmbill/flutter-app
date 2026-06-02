@@ -33,8 +33,8 @@ class ExpenseModel {
 
   factory ExpenseModel.fromJson(Map<String, dynamic> json) {
     return ExpenseModel(
-      id: json['id']?.toString() ?? json['_id']?.toString(),
-      title: json['title'] ?? json['name'] ?? '',
+      id: json['expenseId']?.toString() ?? json['id']?.toString() ?? json['_id']?.toString(),
+      title: json['expenseName'] ?? json['title'] ?? json['name'] ?? '',
       amount: (json['amount'] ?? 0).toDouble(),
       category: json['category'],
       paidBy: json['paidBy'] ?? json['paid_by'],
@@ -44,7 +44,7 @@ class ExpenseModel {
               .map((s) => ShareModel.fromJson(s))
               .toList()
           : null,
-      date: json['date'],
+      date: json['expenseDate'] ?? json['date'],
       eventId: json['eventId'] ?? json['event_id'],
       type: json['type'],
       description: json['description'],

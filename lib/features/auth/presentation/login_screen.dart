@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/utils/app_theme.dart';
@@ -18,6 +19,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _inviteCodeController = TextEditingController();
+
+  // Feature flag: Google sign-in UI is built but disabled for now.
+  static const bool _enableGoogleSignIn = false;
 
   bool _isLogin = true;
   bool _isLoading = false;
@@ -46,6 +51,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     _passwordController.dispose();
     _nameController.dispose();
     _confirmPasswordController.dispose();
+    _inviteCodeController.dispose();
     _animController.dispose();
     super.dispose();
   }
@@ -88,6 +94,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         } catch (_) {
           // Backend registration optional during migration
         }
+
+        if (mounted) {
+          context.go('/home');
+        }
       } else {
         if (_passwordController.text != _confirmPasswordController.text) {
           setState(() => _errorMessage = 'Passwords do not match');
@@ -106,9 +116,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             'email': _emailController.text.trim(),
             'name': _nameController.text.trim(),
             'password': _passwordController.text,
+            'inviteCode': _inviteCodeController.text.trim(),
           });
         } catch (_) {
           // Backend registration optional during migration
+        }
+
+        if (mounted) {
+          context.go('/home');
         }
       }
     } on Exception catch (e) {
@@ -130,7 +145,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
     try {
       final authService = ref.read(authServiceProvider);
-      await authService.signInWithGoogle();
+      final apiClient = ref.read(apiClientProvider);
+      
+      final success = await authService.signInWithGoogle();
+      if (success) {
+        // Register with backend (this might run after redirect depending on OAuth flow)
+        try {
+          await apiClient.post('/db/login');
+        } catch (_) {}
+        
+        if (mounted) context.go('/home');
+      }
     } on Exception catch (e) {
       setState(() {
         _errorMessage = _getErrorMessage(e);
@@ -387,6 +412,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     v == null || v.isEmpty ? 'Name is required' : null,
               ),
               const SizedBox(height: 16),
+              TextFormField(
+                controller: _inviteCodeController,
+                decoration: const InputDecoration(
+                  labelText: 'Invite Code',
+                  prefixIcon: Icon(Icons.qr_code),
+                ),
+                validator: (v) =>
+                    v == null || v.isEmpty ? 'Invite code is required' : null,
+              ),
+              const SizedBox(height: 16),
             ],
 
             // Email
@@ -507,8 +542,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               ),
             ),
 
-            // Google sign in
-            if (!_showForgotPassword) ...[
+            // Google sign in (disabled for now)
+            // ignore: dead_code
+            if (_enableGoogleSignIn) ...[
               const SizedBox(height: 16),
               Row(
                 children: [

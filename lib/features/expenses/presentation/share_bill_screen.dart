@@ -84,7 +84,7 @@ class _ShareBillScreenState extends ConsumerState<ShareBillScreen> {
       }
 
       await api.post('/db/expense', data: {
-        'title': _titleController.text.trim(),
+        'expenseName': _titleController.text.trim(),
         'amount': totalAmount,
         'category': _selectedCategory,
         'shares': shares,
@@ -109,6 +109,73 @@ class _ShareBillScreenState extends ConsumerState<ShareBillScreen> {
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _addMemberByEmail() async {
+    final emailController = TextEditingController();
+    final nameController = TextEditingController();
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add Member'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(labelText: 'Email Address'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: 'Name (Optional)'),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'If this person is not registered, they will be invited. You can still share this expense with them.',
+              style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Add')),
+        ],
+      ),
+    );
+
+    if (confirm == true && emailController.text.isNotEmpty) {
+      setState(() => _isLoading = true);
+      try {
+        final api = ref.read(apiClientProvider);
+        final res = await api.post('/db/user/phantom', data: {
+          'email': emailController.text.trim(),
+          'name': nameController.text.trim(),
+        });
+        
+        final user = res.data;
+        if (!_users.any((u) => (u['id'] ?? u['_id']) == (user['id'] ?? user['_id']))) {
+          setState(() {
+            _users.add(user);
+          });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Member added!'), backgroundColor: AppTheme.successColor),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to add member')),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -158,7 +225,7 @@ class _ShareBillScreenState extends ConsumerState<ShareBillScreen> {
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    initialValue: _selectedCategory,
+                    value: _selectedCategory,
                     decoration: const InputDecoration(
                       labelText: 'Category',
                       prefixIcon: Icon(Icons.category),
@@ -251,6 +318,13 @@ class _ShareBillScreenState extends ConsumerState<ShareBillScreen> {
                       );
                     }),
                   ],
+
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: _addMemberByEmail,
+                    icon: const Icon(Icons.person_add),
+                    label: const Text('Add Member by Email'),
+                  ),
 
                   const SizedBox(height: 32),
                   SizedBox(
