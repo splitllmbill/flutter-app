@@ -1,6 +1,6 @@
 # SplitLLM — Flutter Web
 
-Production-grade Flutter Web rewrite of the SplitLLM React frontend. Features Supabase Authentication, Riverpod state management, and Dio-based API integration with the existing Flask backend.
+Smart expense-splitting app built with Flutter Web, featuring Supabase Authentication, Riverpod state management, LLM-powered natural language expense parsing, and a FastAPI backend.
 
 ## Tech Stack
 
@@ -14,6 +14,16 @@ Production-grade Flutter Web rewrite of the SplitLLM React frontend. Features Su
 | Config | flutter_dotenv (`.env`) |
 | Charts | fl_chart |
 | Hosting / CI | Vercel |
+
+## Features
+
+- **Dashboard** — Summary cards, pie charts, quick actions
+- **Events** — Create, view, edit, delete group events
+- **Expenses** — Add expenses, split bills, track who owes what
+- **Friends** — Add friends by code, view balances, settle up
+- **Personal Expenses** — Track personal spending with LLM chatbot parsing
+- **Account** — Profile management, QR code, UPI payment links
+- **Payments** — Public payment page with QR code
 
 ## Getting Started
 
@@ -157,24 +167,5 @@ flutter build web --release --dart-define=API_BASE_URL=https://api.domain.com
 ## Backend Integration
 
 The Flutter app sends `Authorization: Bearer <supabase_access_token>` in all API
-requests. The Flask backend validates the Supabase JWT (e.g. against the project's
-JWKS / JWT secret) and reads the user id from the `sub` claim.
-
-## Migration Checklist
-
-- [x] Analyze React repository
-- [x] Create Flutter project structure
-- [x] Core infrastructure (Dio, Supabase Auth, Riverpod, go_router)
-- [x] Data models (User, Event, Expense, Share, FilterInput)
-- [x] Auth feature (Login, Sign-up, Google Sign-In, Forgot Password)
-- [x] Dashboard (Summary cards, Pie chart, Quick actions)
-- [x] Events (List, Detail, Create/Edit, Delete)
-- [x] Expenses (Create/Edit, Detail, Share Bill)
-- [x] Friends (List, Detail, Add, Delete, Settle)
-- [x] Personal Expenses (List, LLM Chatbot)
-- [x] Account (Profile, QR Code, UPI, Change Password, Sign Out)
-- [x] Payment page (Public payment with QR)
-- [x] Vercel config (vercel.json, vercel_build.sh)
-- [x] Environment config via `.env` (flutter_dotenv)
-- [ ] Update Flask backend to validate Supabase JWTs
-- [ ] Set Vercel Environment Variables for deployment
+requests. The FastAPI backend validates the Supabase JWT against the project's JWKS
+endpoint and reads the user id from the `sub` claim.
