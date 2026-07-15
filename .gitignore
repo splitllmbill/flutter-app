@@ -45,3 +45,9 @@ app.*.map.json
 .env.*
 # ...but keep the committed template.
 !.env.example
+
+# Catalyst (client/ is the staged web build; keep only the package manifest)
+client/*
+!client/client-package.json
+.catalystrc
+catalyst-debug.log

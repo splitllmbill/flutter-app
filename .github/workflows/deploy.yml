@@ -1,0 +1,56 @@
+name: CI/CD
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.0"
+          channel: stable
+          cache: true
+      # .env is a bundled pubspec asset; analyze/test need it to exist
+      - run: cp .env.example .env
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    concurrency: catalyst-deploy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.0"
+          channel: stable
+          cache: true
+      # Runtime config: bundled as the .env asset and passed as dart-defines
+      # by build_client.sh. These are public in the JS bundle by design, so
+      # they live in Actions *variables*, not secrets.
+      - name: Write .env from repo variables
+        run: |
+          {
+            echo "API_BASE_URL=${{ vars.API_BASE_URL }}"
+            echo "SUPABASE_URL=${{ vars.SUPABASE_URL }}"
+            echo "SUPABASE_ANON_KEY=${{ vars.SUPABASE_ANON_KEY }}"
+          } > .env
+      - name: Build web app (--base-href /app/) and stage into client/
+        run: sh scripts/build_client.sh
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Deploy to Catalyst
+        run: |
+          npm install -g zcatalyst-cli
+          catalyst --token "$CATALYST_TOKEN" --project SplitLLM --org 60078340202 --dc in deploy
+        env:
+          CATALYST_TOKEN: ${{ secrets.CATALYST_TOKEN }}

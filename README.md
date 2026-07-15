@@ -169,3 +169,29 @@ flutter build web --release --dart-define=API_BASE_URL=https://api.domain.com
 The Flutter app sends `Authorization: Bearer <supabase_access_token>` in all API
 requests. The FastAPI backend validates the Supabase JWT against the project's JWKS
 endpoint and reads the user id from the `sub` claim.
+
+## Deployment (Zoho Catalyst Web Hosting)
+
+The web app is hosted on Catalyst in project **SplitLLM** (`46831000000013050`,
+org `60078340202`, IN DC) and served under `/app/`:
+`https://splitllm-60078340202.development.catalystserverless.in/app/index.html`.
+
+```bash
+catalyst project:use SplitLLM --org 60078340202   # one-time binding
+sh scripts/build_client.sh                        # flutter build web -> client/
+catalyst deploy                                   # ships client/
+```
+
+Notes:
+
+- **`--base-href /app/` is mandatory** (already in `scripts/build_client.sh`)
+  because Catalyst serves the client under `/app/`; without it the page spins
+  forever on a 404'd bootstrap JS. Re-check this if/when a custom domain or
+  production mapping changes the serving path.
+- Dart-defines (`API_BASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`) come from
+  `.env` locally; CI passes them from GitHub Actions variables.
+- CI deploys automatically on push to `main` (see
+  `.github/workflows/deploy.yml`; needs the `CATALYST_TOKEN` repo secret from
+  `catalyst token:generate`).
+- The API lives in a separate AppSail service — see the
+  `github.com/splitllmbill/backend` repo.
