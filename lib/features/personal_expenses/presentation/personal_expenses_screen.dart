@@ -180,7 +180,8 @@ class _PersonalExpensesScreenState extends ConsumerState<PersonalExpensesScreen>
                 style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
               ),
               trailing: Text(
-                AppUtils.formatCurrency(expense.amount),
+                AppUtils.formatCurrency(expense.amount,
+                    currency: expense.currency),
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               ),
             ),

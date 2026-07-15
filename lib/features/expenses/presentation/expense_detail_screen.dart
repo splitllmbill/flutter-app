@@ -153,7 +153,8 @@ class _ExpenseDetailScreenState extends ConsumerState<ExpenseDetailScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  AppUtils.formatCurrency(_expense!.amount),
+                                  AppUtils.formatCurrency(_expense!.amount,
+                                      currency: _expense!.currency),
                                   style: const TextStyle(
                                     fontSize: 36,
                                     fontWeight: FontWeight.bold,
@@ -200,7 +201,8 @@ class _ExpenseDetailScreenState extends ConsumerState<ExpenseDetailScreen> {
                                     ),
                                     title: Text(share.userName ?? 'Unknown'),
                                     trailing: Text(
-                                      AppUtils.formatCurrency(share.amount ?? 0),
+                                      AppUtils.formatCurrency(share.amount ?? 0,
+                                          currency: _expense!.currency),
                                       style: const TextStyle(fontWeight: FontWeight.bold),
                                     ),
                                   ),

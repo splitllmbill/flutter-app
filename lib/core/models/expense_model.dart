@@ -14,6 +14,7 @@ class ExpenseModel {
   final String? description;
   final String? friendId;
   final bool? isSettled;
+  final String? currency;
 
   ExpenseModel({
     this.id,
@@ -29,6 +30,7 @@ class ExpenseModel {
     this.description,
     this.friendId,
     this.isSettled,
+    this.currency,
   });
 
   factory ExpenseModel.fromJson(Map<String, dynamic> json) {
@@ -50,6 +52,7 @@ class ExpenseModel {
       description: json['description'],
       friendId: json['friendId'] ?? json['friend_id'],
       isSettled: json['isSettled'] ?? json['is_settled'],
+      currency: json['currency'],
     );
   }
 

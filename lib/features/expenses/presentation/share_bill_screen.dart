@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/currencies.dart';
 import '../../../core/providers.dart';
+import '../../../core/services/receipt_scanner.dart';
 import '../../../core/utils/app_theme.dart';
 import '../../../core/utils/helpers.dart';
 
@@ -19,10 +21,64 @@ class _ShareBillScreenState extends ConsumerState<ShareBillScreen> {
   final _amountController = TextEditingController();
   String _splitType = 'equal';
   String _selectedCategory = 'General';
+  String _currency = Currencies.defaultCode;
+  String? _date;
+  Map<String, dynamic>? _me;
   final List<Map<String, dynamic>> _users = [];
   final Map<String, double> _customAmounts = {};
   final Map<String, double> _percentages = {};
   bool _isLoading = false;
+  bool _isScanning = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAccount();
+  }
+
+  Future<void> _loadAccount() async {
+    try {
+      final api = ref.read(apiClientProvider);
+      final response = await api.get('/db/user/account');
+      if (mounted) {
+        setState(() {
+          _me = Map<String, dynamic>.from(response.data);
+          _currency = _me?['defaultCurrency'] ?? Currencies.defaultCode;
+          // The payer splits the bill with the members, so they're part of it
+          if (!_users.any((u) => u['id'] == _me?['id'])) {
+            _users.insert(0, _me!);
+          }
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _scanReceipt() async {
+    setState(() => _isScanning = true);
+    try {
+      final receipt = await pickAndScanReceipt(ref);
+      if (receipt == null) return;
+      setState(() {
+        if (receipt.name != null) _titleController.text = receipt.name!;
+        if (receipt.amount != null) {
+          _amountController.text = receipt.amount.toString();
+        }
+        if (receipt.currency != null &&
+            Currencies.all.any((c) => c.code == receipt.currency)) {
+          _currency = receipt.currency!;
+        }
+        if (receipt.date != null) _date = receipt.date;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not read receipt: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isScanning = false);
+    }
+  }
 
   final _categories = [
     'General',
@@ -83,13 +139,20 @@ class _ShareBillScreenState extends ConsumerState<ShareBillScreen> {
         }).toList();
       }
 
+      // The current user pays the bill; shares define who owes what
+      final myId = _me?['id']?.toString();
       await api.post('/db/expense', data: {
         'expenseName': _titleController.text.trim(),
         'amount': totalAmount,
         'category': _selectedCategory,
+        'currency': _currency,
         'shares': shares,
+        if (myId != null)
+          'payShares': [
+            {'userId': myId, 'amount': totalAmount}
+          ],
         'type': widget.expenseType,
-        'date': DateTime.now().toIso8601String(),
+        'date': _date ?? DateTime.now().toIso8601String(),
       });
 
       if (mounted) {
@@ -199,6 +262,22 @@ class _ShareBillScreenState extends ConsumerState<ShareBillScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  OutlinedButton.icon(
+                    onPressed: _isScanning ? null : _scanReceipt,
+                    icon: _isScanning
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.document_scanner_outlined),
+                    label: Text(
+                        _isScanning ? 'Reading receipt…' : 'Scan a receipt'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
                   TextFormField(
                     controller: _titleController,
                     decoration: const InputDecoration(
@@ -209,19 +288,49 @@ class _ShareBillScreenState extends ConsumerState<ShareBillScreen> {
                         v == null || v.isEmpty ? 'Required' : null,
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _amountController,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(
-                      labelText: 'Total Amount',
-                      prefixIcon: Icon(Icons.currency_rupee),
-                    ),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Required';
-                      if (double.tryParse(v) == null) return 'Invalid amount';
-                      return null;
-                    },
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: TextFormField(
+                          controller: _amountController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
+                          decoration: InputDecoration(
+                            labelText: 'Total Amount',
+                            prefixIcon: const Icon(Icons.payments),
+                            prefixText:
+                                '${Currencies.symbolFor(_currency)} ',
+                          ),
+                          validator: (v) {
+                            if (v == null || v.isEmpty) return 'Required';
+                            if (double.tryParse(v) == null) {
+                              return 'Invalid amount';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: DropdownButtonFormField<String>(
+                          value: _currency,
+                          decoration:
+                              const InputDecoration(labelText: 'Currency'),
+                          dropdownColor: AppTheme.cardColor,
+                          items: Currencies.all
+                              .map((c) => DropdownMenuItem(
+                                    value: c.code,
+                                    child: Text('${c.symbol} ${c.code}'),
+                                  ))
+                              .toList(),
+                          onChanged: (v) => setState(
+                              () => _currency = v ?? Currencies.defaultCode),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
@@ -300,7 +409,7 @@ class _ShareBillScreenState extends ConsumerState<ShareBillScreen> {
                                     decoration: InputDecoration(
                                       suffixText: _splitType == 'percentage'
                                           ? '%'
-                                          : '₹',
+                                          : Currencies.symbolFor(_currency),
                                       isDense: true,
                                     ),
                                     onChanged: (v) {

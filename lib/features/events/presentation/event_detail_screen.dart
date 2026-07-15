@@ -182,7 +182,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen>
                 style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
               ),
               trailing: Text(
-                AppUtils.formatCurrency(expense.amount),
+                AppUtils.formatCurrency(expense.amount,
+                    currency: expense.currency ?? _event?['currency']),
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               ),
             ),
@@ -197,8 +198,18 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen>
       return const Center(child: Text('No balance data'));
     }
 
-    final balances = _dues!['balances'] ?? _dues!['dues'] ?? [];
-    if (balances is! List || balances.isEmpty) {
+    // Backend: isOwed = people who owe you (positive), inDebtTo = people you
+    // owe (negative); amounts are in the event's currency.
+    final currency = _dues!['currency'] ?? _event?['currency'];
+    final balances = <Map<String, dynamic>>[
+      ...((_dues!['isOwed'] as List?) ?? [])
+          .map((e) => {...Map<String, dynamic>.from(e)}),
+      ...((_dues!['inDebtTo'] as List?) ?? []).map((e) => {
+            ...Map<String, dynamic>.from(e),
+            'amount': -((e['amount'] ?? 0).toDouble()),
+          }),
+    ];
+    if (balances.isEmpty) {
       return const Center(
         child: Text('All settled up!', style: TextStyle(color: AppTheme.textSecondary)),
       );
@@ -230,7 +241,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen>
               style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
             ),
             trailing: Text(
-              AppUtils.formatCurrency(amount.abs()),
+              AppUtils.formatCurrency(amount.abs(), currency: currency),
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: isPositive ? AppTheme.successColor : AppTheme.errorColor,

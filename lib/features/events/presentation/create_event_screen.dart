@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/currencies.dart';
 import '../../../core/providers.dart';
 import '../../../core/utils/app_theme.dart';
 
@@ -18,6 +19,8 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   final _descriptionController = TextEditingController();
   final _memberEmailController = TextEditingController();
   final List<String> _memberEmails = [];
+  String _currency = Currencies.defaultCode;
+  bool _hasExpenses = false;
   bool _isLoading = false;
   bool _isEditing = false;
 
@@ -25,7 +28,22 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   void initState() {
     super.initState();
     _isEditing = widget.eventId != null;
-    if (_isEditing) _loadEvent();
+    if (_isEditing) {
+      _loadEvent();
+    } else {
+      _loadDefaultCurrency();
+    }
+  }
+
+  Future<void> _loadDefaultCurrency() async {
+    try {
+      final api = ref.read(apiClientProvider);
+      final response = await api.get('/db/user/account');
+      if (mounted) {
+        setState(() => _currency =
+            response.data['defaultCurrency'] ?? Currencies.defaultCode);
+      }
+    } catch (_) {}
   }
 
   @override
@@ -45,6 +63,8 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
       setState(() {
         _titleController.text = data['title'] ?? data['name'] ?? '';
         _descriptionController.text = data['description'] ?? '';
+        _currency = data['currency'] ?? Currencies.defaultCode;
+        _hasExpenses = (data['expenses'] as List?)?.isNotEmpty ?? false;
         if (data['members'] != null) {
           _memberEmails.addAll(List<String>.from(data['members']));
         }
@@ -75,6 +95,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
         'eventName': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
         'users': _memberEmails,
+        'currency': _currency,
       };
 
       if (_isEditing) {
@@ -143,6 +164,28 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
                             prefixIcon: Icon(Icons.description),
                           ),
                           maxLines: 3,
+                        ),
+                        const SizedBox(height: 16),
+                        DropdownButtonFormField<String>(
+                          value: _currency,
+                          decoration: InputDecoration(
+                            labelText: 'Group Currency',
+                            prefixIcon: const Icon(Icons.currency_exchange),
+                            helperText: _isEditing && _hasExpenses
+                                ? 'Locked: the group already has expenses'
+                                : 'Expenses in other currencies are converted to this',
+                          ),
+                          items: Currencies.all
+                              .map((c) => DropdownMenuItem(
+                                    value: c.code,
+                                    child: Text(
+                                        '${c.symbol}  ${c.code} — ${c.name}'),
+                                  ))
+                              .toList(),
+                          onChanged: _isEditing && _hasExpenses
+                              ? null
+                              : (v) => setState(() =>
+                                  _currency = v ?? Currencies.defaultCode),
                         ),
                         const SizedBox(height: 24),
                         const Text(
