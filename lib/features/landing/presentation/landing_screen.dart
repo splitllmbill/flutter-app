@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Color palette for the marketing landing page. These intentionally differ
 /// from [AppTheme] so the landing page can present a distinct, branded look
@@ -43,25 +44,30 @@ class LandingScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return const Scaffold(
+    // Mobile system-bar insets. The fixed header handles the top inset itself
+    // (so its blur extends behind the status bar); the scroll content clears
+    // the header plus that inset, and the home indicator at the bottom.
+    final insets = MediaQuery.paddingOf(context);
+    return Scaffold(
       backgroundColor: _Palette.background,
       body: Stack(
         children: [
           // Scrollable page content, padded down to clear the fixed header.
           SingleChildScrollView(
+            padding: EdgeInsets.only(bottom: insets.bottom),
             child: Column(
               children: [
-                SizedBox(height: _Layout.headerHeight),
-                _HeroSection(),
-                _TrustBar(),
-                _FeatureGrid(),
-                _FinalCtaSection(),
-                _Footer(),
+                SizedBox(height: _Layout.headerHeight + insets.top),
+                const _HeroSection(),
+                const _TrustBar(),
+                const _FeatureGrid(),
+                const _FinalCtaSection(),
+                const _Footer(),
               ],
             ),
           ),
           // Fixed, blurred navigation bar overlaying the content.
-          Align(
+          const Align(
             alignment: Alignment.topCenter,
             child: _Header(),
           ),
@@ -129,11 +135,15 @@ class _Header extends StatelessWidget {
       ],
     );
 
+    // Extend the blurred bar behind the status bar; content stays below it.
+    final topInset = MediaQuery.paddingOf(context).top;
+
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
-          height: _Layout.headerHeight,
+          height: _Layout.headerHeight + topInset,
+          padding: EdgeInsets.only(top: topInset),
           decoration: const BoxDecoration(
             color: Color(0xCC051424), // background @ 80%
             border: Border(
@@ -1188,14 +1198,6 @@ class _FinalCtaSection extends StatelessWidget {
 class _Footer extends StatelessWidget {
   const _Footer();
 
-  static const _links = [
-    'Privacy Policy',
-    'Terms of Service',
-    'Security',
-    'Status',
-    'Contact Us',
-  ];
-
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
@@ -1221,7 +1223,14 @@ class _Footer extends StatelessWidget {
       alignment: WrapAlignment.center,
       spacing: 24,
       runSpacing: 12,
-      children: [for (final l in _links) _FooterLink(l)],
+      children: [
+        _FooterLink('Privacy Policy', onTap: () => context.go('/privacy')),
+        _FooterLink('Terms of Service', onTap: () => context.go('/terms')),
+        _FooterLink(
+          'Contact Us',
+          onTap: () => launchUrl(Uri.parse('mailto:support@splitllm.com')),
+        ),
+      ],
     );
 
     final copyright = Text(
@@ -1274,7 +1283,8 @@ class _Footer extends StatelessWidget {
 
 class _FooterLink extends StatefulWidget {
   final String label;
-  const _FooterLink(this.label);
+  final VoidCallback? onTap;
+  const _FooterLink(this.label, {this.onTap});
 
   @override
   State<_FooterLink> createState() => _FooterLinkState();
@@ -1289,14 +1299,17 @@ class _FooterLinkState extends State<_FooterLink> {
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
-      child: Text(
-        widget.label,
-        style: GoogleFonts.inter(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: _hovering
-              ? _Palette.tertiaryContainer
-              : _Palette.onSurfaceVariant,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Text(
+          widget.label,
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: _hovering
+                ? _Palette.tertiaryContainer
+                : _Palette.onSurfaceVariant,
+          ),
         ),
       ),
     );

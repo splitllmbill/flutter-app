@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
@@ -59,6 +60,13 @@ class AppTheme {
         backgroundColor: backgroundColor,
         elevation: 0,
         centerTitle: false,
+        // Keep the transparent, light-icon status bar set in main() when a
+        // screen has an AppBar (AppBars otherwise override the overlay style).
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
+        ),
         titleTextStyle: GoogleFonts.inter(
           fontSize: 20,
           fontWeight: FontWeight.w600,

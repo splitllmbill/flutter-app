@@ -2,5 +2,6 @@
     "name": "splitllm",
     "version": "0.0.1",
     "homepage": "index.html",
-    "login_redirect": "index.html"
+    "login_redirect": "index.html",
+    "404": "index.html"
 }

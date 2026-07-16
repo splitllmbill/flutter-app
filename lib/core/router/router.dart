@@ -18,6 +18,7 @@ import '../../features/friends/presentation/friend_detail_screen.dart';
 import '../../features/friends/presentation/add_friend_screen.dart';
 import '../../features/personal_expenses/presentation/personal_expenses_screen.dart';
 import '../../features/account/presentation/account_screen.dart';
+import '../../features/legal/presentation/legal_screen.dart';
 import '../../features/settlements/presentation/payment_screen.dart';
 import '../../features/admin/presentation/admin_dashboard_screen.dart';
 
@@ -38,9 +39,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLoggingIn = state.matchedLocation == '/login';
       final isLanding = state.matchedLocation == '/landing';
       final isPayment = state.matchedLocation.startsWith('/payments');
+      final isLegal = state.matchedLocation == '/privacy' ||
+          state.matchedLocation == '/terms';
 
-      // Allow payment pages without auth
-      if (isPayment) return null;
+      // Allow payment and legal pages without auth
+      if (isPayment || isLegal) return null;
 
       if (!isAuthenticated && !isLoggingIn && !isLanding) {
         return '/landing';
@@ -71,6 +74,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => PaymentScreen(
           paymentId: state.pathParameters['id'] ?? '',
         ),
+      ),
+
+      // Public legal pages (no shell; also the store-required hosted URLs)
+      GoRoute(
+        path: '/privacy',
+        builder: (context, state) => const LegalScreen.privacy(),
+      ),
+      GoRoute(
+        path: '/terms',
+        builder: (context, state) => const LegalScreen.terms(),
       ),
 
       // Authenticated routes with shell (nav bars)
