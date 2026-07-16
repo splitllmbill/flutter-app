@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -244,6 +245,62 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         await ref.read(apiClientProvider).post('/db/logout');
       } catch (_) {}
       await ref.read(authServiceProvider).signOut();
+    }
+  }
+
+  Future<void> _deleteAccount() async {
+    final confirmController = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'This permanently erases your profile and personal expenses. '
+              'Expenses shared with friends are kept for their balances but '
+              'will show "Deleted User" instead of you. This cannot be '
+              'undone.\n\nType DELETE to confirm.',
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: confirmController,
+              autofocus: true,
+              decoration: const InputDecoration(hintText: 'DELETE'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () =>
+                Navigator.pop(ctx, confirmController.text.trim() == 'DELETE'),
+            style:
+                ElevatedButton.styleFrom(backgroundColor: AppTheme.errorColor),
+            child: const Text('Delete Forever'),
+          ),
+        ],
+      ),
+    );
+    confirmController.dispose();
+    if (confirmed != true) return;
+
+    setState(() => _isLoading = true);
+    try {
+      await ref.read(apiClientProvider).delete('/db/user/account');
+      // Signing out flips the auth state; the router lands on /landing.
+      await ref.read(authServiceProvider).signOut();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to delete account: $e')),
+      );
     }
   }
 
@@ -525,6 +582,18 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                         subtitle: 'Feature request or report an issue',
                         onTap: _submitIssue,
                       ),
+                      _buildActionTile(
+                        icon: Icons.privacy_tip_outlined,
+                        title: 'Privacy Policy',
+                        subtitle: 'How your data is handled',
+                        onTap: () => context.push('/privacy'),
+                      ),
+                      _buildActionTile(
+                        icon: Icons.description_outlined,
+                        title: 'Terms of Service',
+                        subtitle: 'The rules of using SplitLLM',
+                        onTap: () => context.push('/terms'),
+                      ),
                       const SizedBox(height: 24),
                       SizedBox(
                         width: double.infinity,
@@ -537,6 +606,19 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                               style: TextStyle(color: AppTheme.errorColor)),
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: AppTheme.errorColor),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: TextButton.icon(
+                          onPressed: _deleteAccount,
+                          icon: const Icon(Icons.delete_forever_outlined,
+                              color: AppTheme.errorColor),
+                          label: const Text(
+                            'Delete Account',
+                            style: TextStyle(color: AppTheme.errorColor),
                           ),
                         ),
                       ),

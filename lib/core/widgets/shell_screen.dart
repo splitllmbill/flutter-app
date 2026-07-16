@@ -53,10 +53,18 @@ class ShellScreen extends ConsumerWidget {
       return Scaffold(
         body: Row(
           children: [
-            _SideNavBar(
-              selectedIndex: selectedIndex,
-              isAdmin: isAdmin,
-              onItemTapped: (index) => _onItemTapped(context, index),
+            // Keep the rail surface behind the status bar but its content
+            // below it (tablets run edge-to-edge like phones).
+            Container(
+              color: AppTheme.surfaceColor,
+              child: SafeArea(
+                right: false,
+                child: _SideNavBar(
+                  selectedIndex: selectedIndex,
+                  isAdmin: isAdmin,
+                  onItemTapped: (index) => _onItemTapped(context, index),
+                ),
+              ),
             ),
             const VerticalDivider(width: 1),
             Expanded(child: child),

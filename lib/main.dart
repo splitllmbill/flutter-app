@@ -41,6 +41,19 @@ void main() async {
         [DeviceOrientation.portraitUp],
       );
     }
+
+    // Draw behind transparent system bars on every OS version (Android 15+
+    // forces this anyway); screens keep content clear of them via SafeArea.
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light, // Android: light icons
+        statusBarBrightness: Brightness.dark, // iOS: dark bg → light content
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+    );
   }
 
   runApp(

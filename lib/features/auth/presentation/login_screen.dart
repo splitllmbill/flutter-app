@@ -199,12 +199,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             ],
           ),
         ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: FadeTransition(
-              opacity: _fadeAnim,
-              child: isWide ? _buildWideLayout(size) : _buildNarrowLayout(size),
+        // Gradient stays edge-to-edge; the form clears notches and system bars.
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: FadeTransition(
+                opacity: _fadeAnim,
+                child:
+                    isWide ? _buildWideLayout(size) : _buildNarrowLayout(size),
+              ),
             ),
           ),
         ),
@@ -590,15 +594,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  _showForgotPassword
-                      ? 'Remember your password?'
-                      : _isLogin
-                          ? "Don't have an account?"
-                          : 'Already have an account?',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5),
-                    fontSize: 14,
+                // Flexible so the prompt shrinks on narrow screens / large
+                // system font scales instead of overflowing the card.
+                Flexible(
+                  child: Text(
+                    _showForgotPassword
+                        ? 'Remember your password?'
+                        : _isLogin
+                            ? "Don't have an account?"
+                            : 'Already have an account?',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 14,
+                    ),
                   ),
                 ),
                 TextButton(
@@ -622,7 +631,43 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 ),
               ],
             ),
+
+            const SizedBox(height: 8),
+            Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                _legalText('By continuing you agree to our '),
+                _legalLink(context, 'Terms', '/terms'),
+                _legalText(' and '),
+                _legalLink(context, 'Privacy Policy', '/privacy'),
+                _legalText('.'),
+              ],
+            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Text _legalText(String text) => Text(
+        text,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.4),
+          fontSize: 12,
+        ),
+      );
+
+  Widget _legalLink(BuildContext context, String label, String route) {
+    return GestureDetector(
+      onTap: () => context.push(route),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: AppTheme.primaryColor,
+          fontSize: 12,
+          decoration: TextDecoration.underline,
+          decorationColor: AppTheme.primaryColor,
         ),
       ),
     );
