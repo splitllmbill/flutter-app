@@ -24,11 +24,9 @@ class ImportSplitwiseScreen extends ConsumerStatefulWidget {
 }
 
 class _MemberMapping {
-  String mode; // 'me' | 'friend' | 'email'
+  String mode = 'email'; // 'me' | 'friend' | 'email'
   String? friendId;
   final TextEditingController emailController = TextEditingController();
-
-  _MemberMapping({this.mode = 'email'});
 
   void dispose() => emailController.dispose();
 }
