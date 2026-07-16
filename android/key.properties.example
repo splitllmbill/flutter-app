@@ -1,0 +1,12 @@
+# Release signing configuration. Copy to android/key.properties (git-ignored)
+# and fill in. Create the keystore once with:
+#
+#   keytool -genkey -v -keystore ~/upload-keystore.jks -keyalg RSA \
+#     -keysize 2048 -validity 10000 -alias upload
+#
+# Without key.properties, release builds are signed with the debug key
+# (fine for CI artifacts and local testing, not for Play Store uploads).
+storePassword=<store password>
+keyPassword=<key password>
+keyAlias=upload
+storeFile=<absolute path to upload-keystore.jks>

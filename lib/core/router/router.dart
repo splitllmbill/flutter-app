@@ -30,6 +30,10 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/landing',
+    // Unknown locations (stale links, auth deep-link callbacks such as
+    // com.splitllm.app://login-callback) land safely instead of erroring;
+    // the redirect below then sends signed-in users to /home.
+    onException: (context, state, router) => router.go('/landing'),
     redirect: (context, state) {
       final isLoggingIn = state.matchedLocation == '/login';
       final isLanding = state.matchedLocation == '/landing';

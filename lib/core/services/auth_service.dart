@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// App user mapping
@@ -24,6 +25,11 @@ class AppUser {
 /// Supabase Authentication service abstraction.
 class AuthService {
   final SupabaseClient _supabase = Supabase.instance.client;
+
+  /// Custom URL scheme registered in AndroidManifest.xml and Info.plist.
+  /// Mobile OAuth/recovery links deep-link back into the app with it; each
+  /// full URL must be allowlisted in Supabase → Auth → URL Configuration.
+  static const String _mobileScheme = 'com.splitllm.app';
 
   /// Stream of auth state changes.
   Stream<AppUser?> get authStateChanges {
@@ -84,13 +90,22 @@ class AuthService {
   Future<bool> signInWithGoogle() async {
     return await _supabase.auth.signInWithOAuth(
       OAuthProvider.google,
-      redirectTo: 'http://localhost:8080', // Replace with your web url/app scheme
+      // Web: no redirect → Supabase uses the project's Site URL. Mobile: the
+      // browser hands control back to the app via the custom scheme.
+      redirectTo: kIsWeb ? null : '$_mobileScheme://login-callback',
+      authScreenLaunchMode:
+          kIsWeb ? LaunchMode.platformDefault : LaunchMode.externalApplication,
     );
   }
 
   /// Send password reset email.
   Future<void> sendPasswordResetEmail(String email) async {
-    await _supabase.auth.resetPasswordForEmail(email);
+    await _supabase.auth.resetPasswordForEmail(
+      email,
+      // On mobile the recovery link re-opens the app; app.dart listens for
+      // AuthChangeEvent.passwordRecovery and routes to the account screen.
+      redirectTo: kIsWeb ? null : '$_mobileScheme://reset-password',
+    );
   }
 
   /// Update password (requires recent auth).
