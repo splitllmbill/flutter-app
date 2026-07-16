@@ -1,11 +1,16 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/constants/constants.dart';
 import 'app.dart';
 
-import 'package:flutter_web_plugins/url_strategy.dart';
+// Web-only URL strategy; the stub is a no-op on Android/iOS where
+// package:flutter_web_plugins does not compile.
+import 'core/utils/url_strategy_stub.dart'
+    if (dart.library.js_interop) 'core/utils/url_strategy_web.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +29,19 @@ void main() async {
   );
 
   // Use path URL strategy so flutter router doesn't conflict with Supabase deep link hashes
-  usePathUrlStrategy();
+  configureUrlStrategy();
+
+  // Phone-sized devices are portrait-only (matches the web manifest); tablets
+  // keep free rotation for the wide layouts.
+  if (!kIsWeb) {
+    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    final shortestSide = view.physicalSize.shortestSide / view.devicePixelRatio;
+    if (shortestSide < 600) {
+      await SystemChrome.setPreferredOrientations(
+        [DeviceOrientation.portraitUp],
+      );
+    }
+  }
 
   runApp(
     const ProviderScope(

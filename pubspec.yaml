@@ -9,6 +9,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Web-only URL strategy (conditionally imported; not compiled on mobile).
+  flutter_web_plugins:
+    sdk: flutter
 
   # State Management
   flutter_riverpod: ^3.2.1
@@ -22,7 +25,6 @@ dependencies:
 
   # Supabase (Auth and Database)
   supabase_flutter: ^2.6.0
-  google_sign_in: ^7.2.0
 
   # UI
   fl_chart: ^1.1.1
@@ -46,6 +48,28 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   build_runner: ^2.4.7
   riverpod_generator: ^4.0.3
+  flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.4
+
+# App icons for Android/iOS. Source PNGs come from scripts/generate_app_icon.py;
+# regenerate with: dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/icon/app_icon.png
+  remove_alpha_ios: true
+  adaptive_icon_background: "#121212"
+  adaptive_icon_foreground: assets/icon/app_icon_foreground.png
+
+# Native splash screens (Android incl. 12+, iOS). Regenerate with:
+# dart run flutter_native_splash:create
+flutter_native_splash:
+  color: "#121212"
+  image: assets/icon/splash_icon.png
+  android_12:
+    color: "#121212"
+    image: assets/icon/splash_icon_android12.png
+  web: false
 
 flutter:
   uses-material-design: true

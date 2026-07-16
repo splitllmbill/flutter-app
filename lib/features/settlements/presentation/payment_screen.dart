@@ -44,11 +44,17 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
 
   Future<void> _openUPILink() async {
     final upiLink = _paymentData?['upiLink'] ?? _paymentData?['upi_link'];
-    if (upiLink != null) {
-      final uri = Uri.parse(upiLink);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
+    if (upiLink == null) return;
+    final uri = Uri.parse(upiLink);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else if (mounted) {
+      // No UPI-capable app on this device (or scheme not visible).
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No UPI app found — scan the QR code instead'),
+        ),
+      );
     }
   }
 

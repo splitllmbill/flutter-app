@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   test:
@@ -22,6 +23,70 @@ jobs:
       # (deprecations, style) are tracked debt and don't block CI.
       - run: flutter analyze --no-fatal-infos
       - run: flutter test
+
+  # Mobile builds validate the android/ and ios/ platform configs on every
+  # change; the Android APK is also uploaded as an installable artifact.
+  # Config values baked into these builds come from the same Actions variables
+  # as the web deploy (public in the bundle by design); PR builds from forks
+  # fall back to .env.example.
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.0"
+          channel: stable
+          cache: true
+      - name: Write .env (repo variables, else template)
+        run: |
+          if [ -n "${{ vars.API_BASE_URL }}" ]; then
+            {
+              echo "API_BASE_URL=${{ vars.API_BASE_URL }}"
+              echo "SUPABASE_URL=${{ vars.SUPABASE_URL }}"
+              echo "SUPABASE_ANON_KEY=${{ vars.SUPABASE_ANON_KEY }}"
+            } > .env
+          else
+            cp .env.example .env
+          fi
+      - run: flutter pub get
+      # Signed with the debug key unless android/key.properties exists
+      # (see android/key.properties.example); fine for direct installs.
+      - run: flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: splitllm-android-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+
+  build-ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.0"
+          channel: stable
+          cache: true
+      - name: Write .env (repo variables, else template)
+        run: |
+          if [ -n "${{ vars.API_BASE_URL }}" ]; then
+            {
+              echo "API_BASE_URL=${{ vars.API_BASE_URL }}"
+              echo "SUPABASE_URL=${{ vars.SUPABASE_URL }}"
+              echo "SUPABASE_ANON_KEY=${{ vars.SUPABASE_ANON_KEY }}"
+            } > .env
+          else
+            cp .env.example .env
+          fi
+      - run: flutter pub get
+      # No Apple signing credentials in CI; this validates the iOS project
+      # compiles and links. Store/TestFlight builds are made from Xcode.
+      - run: flutter build ios --release --no-codesign
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
