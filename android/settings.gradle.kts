@@ -19,7 +19,10 @@ pluginManagement {
 
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
-    id("com.android.application") version "9.0.1" apply false
+    // AGP 8.x (not the template's 9.x): plugins that still apply the Kotlin
+    // Gradle Plugin themselves (file_picker) silently produce empty modules
+    // under AGP 9, breaking the build at :app:compileReleaseJavaWithJavac.
+    id("com.android.application") version "8.13.2" apply false
     id("org.jetbrains.kotlin.android") version "2.3.20" apply false
 }
 
