@@ -13,7 +13,7 @@ Smart expense-splitting app built with Flutter Web, featuring Supabase Authentic
 | Auth | Supabase Authentication |
 | Config | flutter_dotenv (`.env`) |
 | Charts | fl_chart |
-| Hosting / CI | Vercel |
+| Hosting / CI | Zoho Catalyst Web Hosting + GitHub Actions |
 
 ## Features
 
@@ -54,7 +54,7 @@ API_BASE_URL=http://localhost:8081
 ```
 
 `.env` is git-ignored. To change Supabase or the backend URL later, just edit `.env`
-(local) or the Vercel Environment Variables (production) — no Dart code changes needed.
+(local) or the GitHub Actions repo variables (production) — no Dart code changes needed.
 
 > Resolution order for each value: `.env` → `--dart-define=KEY=value` → built-in default.
 
@@ -74,31 +74,6 @@ flutter build web --release --tree-shake-icons
 ```
 
 Output is written to `build/web`.
-
-## Deployment (Vercel)
-
-The app deploys to Vercel via [`vercel.json`](./vercel.json) + [`vercel_build.sh`](./vercel_build.sh).
-Because Vercel's build image has no Flutter SDK, the build script installs Flutter,
-writes a `.env` from the project's Environment Variables, then runs `flutter build web`.
-
-**Setup:**
-
-1. Import the repository into Vercel (Root Directory = `flutter-app`).
-2. Vercel reads `vercel.json` automatically:
-   - Build command: `bash vercel_build.sh`
-   - Output directory: `build/web`
-3. In **Project Settings → Environment Variables**, add:
-
-   | Variable | Description |
-   |---|---|
-   | `SUPABASE_URL` | Supabase project URL |
-   | `SUPABASE_ANON_KEY` | Supabase publishable / anon key |
-   | `API_BASE_URL` | Production backend API base URL |
-
-4. Push to your default branch — Vercel builds and deploys automatically.
-
-`vercel.json` also configures SPA rewrites (all routes → `index.html`) and security
-headers (`X-Frame-Options`, `Strict-Transport-Security`, etc.).
 
 ## Project Structure
 
@@ -161,7 +136,7 @@ flutter run -d chrome
 # Override a single value at build time
 flutter build web --release --dart-define=API_BASE_URL=https://api.domain.com
 
-# Production: Vercel injects env vars → vercel_build.sh writes them into .env
+# Production (CI): GitHub Actions variables are written into .env before the build
 ```
 
 ## Backend Integration

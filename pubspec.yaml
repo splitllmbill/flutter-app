@@ -52,6 +52,6 @@ flutter:
 
   assets:
     - assets/images/
-    # Runtime configuration (Supabase/API). Generated from .env.example or from
-    # the host's environment variables (see vercel_build.sh). Git-ignored.
+    # Runtime configuration (Supabase/API). Copied from .env.example locally; in
+    # CI it's written from GitHub Actions variables before the build. Git-ignored.
     - .env
