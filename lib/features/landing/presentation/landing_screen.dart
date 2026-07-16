@@ -449,32 +449,51 @@ class _HeroSection extends StatelessWidget {
               ),
             ),
           ),
+          // Slow-drifting gradient orbs give the hero depth behind the copy.
+          const Positioned(
+            top: 140,
+            left: 20,
+            child: _FloatingOrb(
+              size: 180,
+              color: Color(0x2200E5C9),
+              duration: Duration(seconds: 7),
+            ),
+          ),
+          const Positioned(
+            top: 60,
+            right: 40,
+            child: _FloatingOrb(
+              size: 140,
+              color: Color(0x33B78AF7),
+              duration: Duration(seconds: 9),
+            ),
+          ),
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const _Badge(),
               const SizedBox(height: 32),
               ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 760),
+                constraints: const BoxConstraints(maxWidth: 820),
                 child: Text(
-                  'Split Bills Smartly with AI',
+                  'Just another expense\nsplitting app.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: isDesktop ? 56 : 36,
-                    height: 1.1,
+                    fontSize: isDesktop ? 60 : 38,
+                    height: 1.08,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: -1,
+                    letterSpacing: -1.2,
                     color: _Palette.onBackground,
                   ),
                 ),
               ),
               const SizedBox(height: 24),
               ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 620),
+                constraints: const BoxConstraints(maxWidth: 640),
                 child: Text(
-                  'Track expenses, settle dues, and stay balanced without the '
-                  'awkward conversations. The intelligent financial utility for '
-                  'seamless group experiences.',
+                  'Except this one reads your receipts, speaks 31 currencies, '
+                  'imports your Splitwise history, and settles the math before '
+                  'the conversation gets awkward.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: isDesktop ? 18 : 16,
@@ -487,7 +506,8 @@ class _HeroSection extends StatelessWidget {
               const SizedBox(height: 40),
               _HeroActions(isDesktop: isDesktop),
               SizedBox(height: isDesktop ? 96 : 64),
-              const _DashboardPreview(),
+              // Perspective-tilted product shot that reacts to the pointer.
+              const _Tilt3D(child: _DashboardPreview()),
             ],
           ),
         ],
@@ -572,7 +592,7 @@ class _BadgeState extends State<_Badge>
           const SizedBox(width: 8),
           Flexible(
             child: Text(
-              'INTRODUCING SPLITLLM 2.0',
+              'SPLITLLM.COM — NOW WITH RECEIPT VISION',
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.inter(
                 fontSize: 12,
@@ -583,6 +603,112 @@ class _BadgeState extends State<_Badge>
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A soft radial orb that drifts slowly up and down, adding depth behind the
+/// hero content. Purely decorative.
+class _FloatingOrb extends StatefulWidget {
+  final double size;
+  final Color color;
+  final Duration duration;
+
+  const _FloatingOrb({
+    required this.size,
+    required this.color,
+    required this.duration,
+  });
+
+  @override
+  State<_FloatingOrb> createState() => _FloatingOrbState();
+}
+
+class _FloatingOrbState extends State<_FloatingOrb>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: widget.duration,
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) => Transform.translate(
+          offset: Offset(0, 24 * (_controller.value - 0.5)),
+          child: child,
+        ),
+        child: Container(
+          width: widget.size,
+          height: widget.size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              colors: [widget.color, widget.color.withValues(alpha: 0)],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Wraps [child] in a 3D perspective tilt that follows the pointer on
+/// desktop/web, giving the product shot a "floating card" feel. On touch it
+/// rests at a subtle static tilt.
+class _Tilt3D extends StatefulWidget {
+  final Widget child;
+  const _Tilt3D({required this.child});
+
+  @override
+  State<_Tilt3D> createState() => _Tilt3DState();
+}
+
+class _Tilt3DState extends State<_Tilt3D> {
+  // Tilt angles in radians, driven by the pointer's position over the card.
+  double _rx = 0.04;
+  double _ry = 0;
+
+  void _updateTilt(PointerEvent event, Size size) {
+    final dx = (event.localPosition.dx / size.width) - 0.5; // -0.5 .. 0.5
+    final dy = (event.localPosition.dy / size.height) - 0.5;
+    setState(() {
+      _ry = dx * 0.10;
+      _rx = 0.04 - dy * 0.10;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) => MouseRegion(
+        onHover: (e) => _updateTilt(
+            e, Size(constraints.maxWidth, constraints.maxHeight)),
+        onExit: (_) => setState(() {
+          _rx = 0.04;
+          _ry = 0;
+        }),
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0, end: 1),
+          duration: const Duration(milliseconds: 120),
+          builder: (context, _, __) => Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.identity()
+              ..setEntry(3, 2, 0.0012) // perspective
+              ..rotateX(_rx)
+              ..rotateY(_ry),
+            child: widget.child,
+          ),
+        ),
       ),
     );
   }
@@ -775,25 +901,46 @@ class _FeatureGrid extends StatelessWidget {
 
   static const _features = [
     (
-      icon: Icons.smart_toy,
-      title: 'AI-Powered Splitting',
+      icon: Icons.document_scanner,
+      title: 'Receipts That Read Themselves',
       body:
-          'Upload a receipt and let our LLM automatically detect items, taxes, '
-              'and tips, assigning them accurately.',
+          'Snap a receipt and a vision model extracts the merchant, items, '
+              'taxes, total, and even the currency — ready to split.',
+    ),
+    (
+      icon: Icons.currency_exchange,
+      title: 'Any Currency, One Balance',
+      body:
+          'Set a currency per group, per expense, or globally. Everything is '
+              'auto-converted so trips abroad still add up at home.',
+    ),
+    (
+      icon: Icons.move_down,
+      title: 'Leave Splitwise in Minutes',
+      body:
+          'Import a Splitwise CSV export and your whole group history — '
+              'expenses, payments, and balances — comes with you.',
     ),
     (
       icon: Icons.account_balance_wallet,
-      title: 'Seamless Group Expenses',
+      title: 'Groups That Stay Organized',
       body:
-          'Create trips, household groups, or simple dinner events to keep all '
-              'related expenses organized in one place.',
+          'Trips, flats, dinners — keep every shared expense in its place '
+              'with running balances for each member.',
     ),
     (
       icon: Icons.share,
-      title: 'Invite Friends & Share',
+      title: 'Settle With a Link',
       body:
-          'Instantly send settlement requests via a single link. No app '
-              'download required for them to pay you back.',
+          'Send a payment link with the exact amount. No app download '
+              'required for them to pay you back.',
+    ),
+    (
+      icon: Icons.mark_email_read,
+      title: 'Everyone Stays in the Loop',
+      body:
+          'New expenses, settle-ups, and invites land in your group\'s inbox '
+              'automatically — no more "wait, what do I owe?"',
     ),
   ];
 
@@ -834,25 +981,35 @@ class _FeatureGrid extends StatelessWidget {
           ),
           const SizedBox(height: 64),
           if (isDesktop)
-            // IntrinsicHeight bounds the Row's height to its tallest child so
-            // CrossAxisAlignment.stretch yields equal-height cards. Without it,
-            // stretch inside the unbounded-height scroll view forces infinity.
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (var i = 0; i < _features.length; i++) ...[
-                    if (i > 0) const SizedBox(width: 24),
-                    Expanded(
-                      child: _FeatureCard(
-                        icon: _features[i].icon,
-                        title: _features[i].title,
-                        body: _features[i].body,
-                      ),
+            // Rows of three. IntrinsicHeight bounds each Row's height to its
+            // tallest child so CrossAxisAlignment.stretch yields equal-height
+            // cards. Without it, stretch inside the unbounded-height scroll
+            // view forces infinity.
+            Column(
+              children: [
+                for (var row = 0; row < _features.length; row += 3) ...[
+                  if (row > 0) const SizedBox(height: 24),
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (var i = row;
+                            i < row + 3 && i < _features.length;
+                            i++) ...[
+                          if (i > row) const SizedBox(width: 24),
+                          Expanded(
+                            child: _FeatureCard(
+                              icon: _features[i].icon,
+                              title: _features[i].title,
+                              body: _features[i].body,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
+                  ),
                 ],
-              ),
+              ],
             )
           else
             Column(

@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import '../constants/currencies.dart';
+
 /// Utility functions ported from React State.tsx.
 class AppUtils {
   AppUtils._();
@@ -37,12 +39,15 @@ class AppUtils {
     return palette;
   }
 
-  /// Format currency amount
-  static String formatCurrency(double amount, {String symbol = '₹'}) {
+  /// Format currency amount. Pass an ISO [currency] code (e.g. "USD") to use
+  /// its symbol; [symbol] wins when supplied explicitly.
+  static String formatCurrency(double amount,
+      {String? symbol, String? currency}) {
+    final sym = symbol ?? Currencies.symbolFor(currency);
     if (amount == amount.roundToDouble()) {
-      return '$symbol${amount.toInt()}';
+      return '$sym${amount.toInt()}';
     }
-    return '$symbol${amount.toStringAsFixed(2)}';
+    return '$sym${amount.toStringAsFixed(2)}';
   }
 
   /// Get initials from name

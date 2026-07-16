@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/constants/currencies.dart';
 import '../../../core/providers.dart';
 import '../../../core/utils/app_theme.dart';
 
@@ -20,6 +21,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   bool _isEditing = false;
   final _nameController = TextEditingController();
   final _upiController = TextEditingController();
+  String _defaultCurrency = Currencies.defaultCode;
   List<dynamic> _invitedUsers = [];
 
   @override
@@ -46,6 +48,8 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         _invitedUsers = invitesResponse.data;
         _nameController.text = _account?['name'] ?? '';
         _upiController.text = _account?['upiId'] ?? _account?['upi_id'] ?? '';
+        _defaultCurrency =
+            _account?['defaultCurrency'] ?? Currencies.defaultCode;
         _isLoading = false;
       });
     } catch (e) {
@@ -65,6 +69,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
       await ref.read(apiClientProvider).put('/db/user/account', data: {
         'name': newName,
         'upiId': newUpi,
+        'defaultCurrency': _defaultCurrency,
       });
       
       // Also update Supabase metadata so the auth provider sees the new name
@@ -80,6 +85,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         if (_account != null) {
           _account!['name'] = newName;
           _account!['upiId'] = newUpi;
+          _account!['defaultCurrency'] = _defaultCurrency;
         }
       });
       ScaffoldMessenger.of(context).showSnackBar(
@@ -409,6 +415,23 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
+                        DropdownButtonFormField<String>(
+                          value: _defaultCurrency,
+                          decoration: const InputDecoration(
+                            labelText: 'Default Currency',
+                            prefixIcon: Icon(Icons.currency_exchange),
+                          ),
+                          items: Currencies.all
+                              .map((c) => DropdownMenuItem(
+                                    value: c.code,
+                                    child: Text(
+                                        '${c.symbol}  ${c.code} — ${c.name}'),
+                                  ))
+                              .toList(),
+                          onChanged: (v) => setState(() =>
+                              _defaultCurrency = v ?? Currencies.defaultCode),
+                        ),
+                        const SizedBox(height: 16),
                         Row(
                           children: [
                             Expanded(
@@ -480,6 +503,13 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                         title: 'Change Password',
                         subtitle: 'Update your password',
                         onTap: _changePassword,
+                      ),
+                      _buildActionTile(
+                        icon: Icons.currency_exchange,
+                        title: 'Currency',
+                        subtitle:
+                            '${Currencies.byCode(_defaultCurrency).symbol} ${Currencies.byCode(_defaultCurrency).name} — used for totals across groups',
+                        onTap: () => setState(() => _isEditing = true),
                       ),
                       _buildActionTile(
                         icon: Icons.account_balance,

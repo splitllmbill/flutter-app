@@ -14,6 +14,7 @@ class FriendsScreen extends ConsumerStatefulWidget {
 
 class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   List<dynamic> _friends = [];
+  String? _currency;
   bool _isLoading = true;
   String? _error;
   final _friendCodeController = TextEditingController();
@@ -37,7 +38,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       final response = await api.get('/db/user/friends');
       final data = response.data;
       setState(() {
-        _friends = data is List ? data : (data['friends'] ?? []);
+        _friends = data is List
+            ? data
+            : (data['friendsList'] ?? data['friends'] ?? []);
+        _currency = data is Map ? data['currency'] : null;
         _isLoading = false;
       });
     } catch (e) {
@@ -168,7 +172,13 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                               '';
                           final name =
                               friend['name'] ?? friend['email'] ?? 'Unknown';
-                          final balance = (friend['balance'] ?? 0).toDouble();
+                          // Backend: oweAmount (absolute) + whoOwes
+                          final oweAmount =
+                              (friend['oweAmount'] ?? friend['balance'] ?? 0)
+                                  .toDouble();
+                          final balance = friend['whoOwes'] == 'user'
+                              ? -oweAmount
+                              : oweAmount;
                           final friendCode = friend['friendCode'] ??
                               friend['friend_code'] ??
                               '';
@@ -195,8 +205,8 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                                 balance == 0
                                     ? 'Settled up'
                                     : balance > 0
-                                        ? 'owes you ${AppUtils.formatCurrency(balance)}'
-                                        : 'you owe ${AppUtils.formatCurrency(balance.abs())}',
+                                        ? 'owes you ${AppUtils.formatCurrency(balance, currency: _currency)}'
+                                        : 'you owe ${AppUtils.formatCurrency(balance.abs(), currency: _currency)}',
                                 style: TextStyle(
                                   color: balance == 0
                                       ? AppTheme.textSecondary

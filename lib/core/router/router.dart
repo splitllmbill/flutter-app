@@ -9,6 +9,7 @@ import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/events/presentation/events_screen.dart';
 import '../../features/events/presentation/event_detail_screen.dart';
 import '../../features/events/presentation/create_event_screen.dart';
+import '../../features/events/presentation/import_splitwise_screen.dart';
 import '../../features/expenses/presentation/create_expense_screen.dart';
 import '../../features/expenses/presentation/expense_detail_screen.dart';
 import '../../features/expenses/presentation/share_bill_screen.dart';
@@ -100,6 +101,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/create-event',
             builder: (context, state) => const CreateEventScreen(),
+          ),
+          GoRoute(
+            path: '/import-splitwise',
+            builder: (context, state) => const ImportSplitwiseScreen(),
           ),
           GoRoute(
             path: '/friends',

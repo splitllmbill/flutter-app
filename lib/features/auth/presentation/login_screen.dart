@@ -279,9 +279,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         ),
         const SizedBox(height: 12),
         Text(
-          'Split bills smartly with AI.\nTrack expenses, settle dues, stay balanced.',
+          'Just another expense splitting app.',
           style: TextStyle(
             fontSize: 18,
+            fontStyle: FontStyle.italic,
             color: Colors.white.withValues(alpha: 0.6),
             height: 1.5,
           ),

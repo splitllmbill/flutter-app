@@ -6,6 +6,7 @@ class EventModel {
   final String? createdBy;
   final String? createdAt;
   final double? totalExpense;
+  final String? currency;
 
   EventModel({
     this.id,
@@ -15,6 +16,7 @@ class EventModel {
     this.createdBy,
     this.createdAt,
     this.totalExpense,
+    this.currency,
   });
 
   factory EventModel.fromJson(Map<String, dynamic> json) {
@@ -28,6 +30,7 @@ class EventModel {
       createdBy: json['createdBy'] ?? json['created_by'],
       createdAt: json['createdAt'] ?? json['created_at'],
       totalExpense: (json['totalExpense'] ?? json['total_expense'])?.toDouble(),
+      currency: json['currency'],
     );
   }
 

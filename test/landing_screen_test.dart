@@ -30,7 +30,7 @@ Future<void> _pumpAt(WidgetTester tester, Size size) async {
 
   FlutterError.onError = previous;
   expect(errors, isEmpty, reason: 'layout errors at width ${size.width}');
-  expect(find.text('Split Bills Smartly with AI'), findsOneWidget);
+  expect(find.text('Just another expense\nsplitting app.'), findsOneWidget);
   expect(find.text('Effortless Control'), findsOneWidget);
   expect(find.text('Ready to balance your life?'), findsOneWidget);
 }

@@ -18,6 +18,7 @@ class FriendDetailScreen extends ConsumerStatefulWidget {
 class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
   Map<String, dynamic>? _friendData;
   List<ExpenseModel> _expenses = [];
+  List<Map<String, dynamic>> _rawExpenses = [];
   bool _isLoading = true;
 
   @override
@@ -36,9 +37,11 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
       setState(() {
         _friendData = data;
         final expList = data['expenses'] ?? [];
-        _expenses = (expList as List)
-            .map<ExpenseModel>((e) => ExpenseModel.fromJson(e))
+        _rawExpenses = (expList as List)
+            .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
             .toList();
+        _expenses =
+            _rawExpenses.map<ExpenseModel>(ExpenseModel.fromJson).toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -87,7 +90,13 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final balance = (_friendData?['balance'] ?? 0).toDouble();
+    // Backend: overallOweAmount (absolute) + overallWhoOwes + currency
+    final oweAmount =
+        (_friendData?['overallOweAmount'] ?? _friendData?['balance'] ?? 0)
+            .toDouble();
+    final balance =
+        _friendData?['overallWhoOwes'] == 'user' ? -oweAmount : oweAmount;
+    final currency = _friendData?['currency'] as String?;
     final friendName =
         _friendData?['name'] ?? _friendData?['friendName'] ?? 'Friend';
 
@@ -149,7 +158,8 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          AppUtils.formatCurrency(balance.abs()),
+                          AppUtils.formatCurrency(balance.abs(),
+                              currency: currency),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 32,
@@ -176,31 +186,46 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
                       ),
                     )
                   else
-                    ..._expenses.map((expense) => Card(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          child: ListTile(
-                            onTap: () => context.push('/expense/${expense.id}'),
-                            leading: CircleAvatar(
-                              backgroundColor:
-                                  AppTheme.primaryColor.withValues(alpha: 0.15),
-                              child: const Icon(Icons.receipt,
-                                  color: AppTheme.primaryColor, size: 20),
-                            ),
-                            title: Text(expense.title,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w600)),
-                            subtitle: Text(
-                              AppDateUtils.formatDateString(expense.date ?? ''),
-                              style: const TextStyle(
-                                  color: AppTheme.textSecondary, fontSize: 12),
-                            ),
-                            trailing: Text(
-                              AppUtils.formatCurrency(expense.amount),
+                    ..._expenses.asMap().entries.map((entry) {
+                      final expense = entry.value;
+                      final raw = _rawExpenses.length > entry.key
+                          ? _rawExpenses[entry.key]
+                          : const <String, dynamic>{};
+                      final summary = raw['user_summary'] ?? {};
+                      final oweAmount =
+                          (summary['oweAmount'] ?? expense.amount).toDouble();
+                      final owedToUser = summary['owePerson'] == 'friend';
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          onTap: () => context.push('/expense/${expense.id}'),
+                          leading: CircleAvatar(
+                            backgroundColor:
+                                AppTheme.primaryColor.withValues(alpha: 0.15),
+                            child: const Icon(Icons.receipt,
+                                color: AppTheme.primaryColor, size: 20),
+                          ),
+                          title: Text(expense.title,
                               style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
+                                  const TextStyle(fontWeight: FontWeight.w600)),
+                          subtitle: Text(
+                            AppDateUtils.formatDateString(expense.date ?? ''),
+                            style: const TextStyle(
+                                color: AppTheme.textSecondary, fontSize: 12),
+                          ),
+                          trailing: Text(
+                            AppUtils.formatCurrency(oweAmount,
+                                currency: currency),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: owedToUser
+                                  ? AppTheme.successColor
+                                  : AppTheme.errorColor,
                             ),
                           ),
-                        )),
+                        ),
+                      );
+                    }),
                 ],
               ),
             ),

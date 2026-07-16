@@ -46,7 +46,20 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Events')),
+      appBar: AppBar(
+        title: const Text('Events'),
+        actions: [
+          IconButton(
+            tooltip: 'Import from Splitwise',
+            icon: const Icon(Icons.upload_file_outlined),
+            onPressed: () async {
+              await context.push('/import-splitwise');
+              _loadEvents();
+            },
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final result = await context.push('/create-event');
@@ -184,7 +197,8 @@ class _EventCard extends StatelessWidget {
               ),
               if (event.totalExpense != null)
                 Text(
-                  AppUtils.formatCurrency(event.totalExpense!),
+                  AppUtils.formatCurrency(event.totalExpense!,
+                      currency: event.currency),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: AppTheme.primaryColor,

@@ -166,14 +166,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   List<Widget> _buildSummaryCards() {
-    final totalOwed = (_summary?['totalOwed'] ?? 0).toDouble();
-    final totalOwe = (_summary?['totalOwe'] ?? 0).toDouble();
-    final totalExpense = (_summary?['totalExpense'] ?? 0).toDouble();
+    // Backend contract: total_owed_to_you / total_you_owe /
+    // personal_expenses + group_expenses, all in `currency`
+    final totalOwed = (_summary?['total_owed_to_you'] ??
+            _summary?['totalOwed'] ??
+            0)
+        .toDouble();
+    final totalOwe =
+        (_summary?['total_you_owe'] ?? _summary?['totalOwe'] ?? 0).toDouble();
+    final totalExpense = ((_summary?['personal_expenses'] ?? 0).toDouble() +
+        (_summary?['group_expenses'] ?? 0).toDouble());
+    final currency = _summary?['currency'] as String?;
 
     return [
       _SummaryCard(
         title: 'Total Expenses',
         amount: totalExpense,
+        currency: currency,
         icon: Icons.account_balance_wallet_rounded,
         gradient: const LinearGradient(
           colors: [Color(0xFF6C63FF), Color(0xFF4A42D9)],
@@ -182,6 +191,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       _SummaryCard(
         title: 'You Are Owed',
         amount: totalOwed,
+        currency: currency,
         icon: Icons.arrow_downward_rounded,
         gradient: const LinearGradient(
           colors: [Color(0xFF00C853), Color(0xFF009624)],
@@ -190,6 +200,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       _SummaryCard(
         title: 'You Owe',
         amount: totalOwe,
+        currency: currency,
         icon: Icons.arrow_upward_rounded,
         gradient: const LinearGradient(
           colors: [Color(0xFFFF5252), Color(0xFFD32F2F)],
@@ -262,7 +273,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return _chartData!.asMap().entries.map((entry) {
       final i = entry.key;
       final item = entry.value;
-      final amount = (item['amount'] ?? item['total'] ?? 0).toDouble();
+      final amount =
+          (item['cost'] ?? item['amount'] ?? item['total'] ?? 0).toDouble();
       return PieChartSectionData(
         value: amount,
         color: colors[i % colors.length],
@@ -287,7 +299,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       final i = entry.key;
       final item = entry.value;
       final label = item['category'] ?? item['name'] ?? 'Other';
-      final amount = (item['amount'] ?? item['total'] ?? 0).toDouble();
+      final amount =
+          (item['cost'] ?? item['amount'] ?? item['total'] ?? 0).toDouble();
+      final currency = item['currency'] as String?;
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -300,7 +314,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
           ),
           const SizedBox(width: 6),
-          Text('$label (${AppUtils.formatCurrency(amount)})',
+          Text('$label (${AppUtils.formatCurrency(amount, currency: currency)})',
               style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
         ],
       );
@@ -351,12 +365,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 class _SummaryCard extends StatelessWidget {
   final String title;
   final double amount;
+  final String? currency;
   final IconData icon;
   final LinearGradient gradient;
 
   const _SummaryCard({
     required this.title,
     required this.amount,
+    this.currency,
     required this.icon,
     required this.gradient,
   });
@@ -392,7 +408,7 @@ class _SummaryCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            AppUtils.formatCurrency(amount),
+            AppUtils.formatCurrency(amount, currency: currency),
             style: const TextStyle(
               color: Colors.white,
               fontSize: 24,
