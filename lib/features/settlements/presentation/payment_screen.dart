@@ -120,13 +120,17 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                                 child: Column(
                                   children: [
                                     Text(
-                                      _paymentData?['name'] ?? 'Payment',
+                                      _paymentData?['userName'] ??
+                                          _paymentData?['name'] ??
+                                          'Payment',
                                       style: const TextStyle(color: AppTheme.textSecondary, fontSize: 16),
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
                                       AppUtils.formatCurrency(
                                         (_paymentData?['amount'] ?? 0).toDouble(),
+                                        currency: _paymentData?['currency']
+                                            as String?,
                                       ),
                                       style: const TextStyle(
                                         fontSize: 40,
@@ -146,8 +150,11 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                               ),
                               const SizedBox(height: 24),
 
-                              // QR Code
-                              if (_paymentData?['qrData'] != null || _paymentData?['qr_data'] != null)
+                              // QR Code — encodes the UPI deep link so any UPI
+                              // app can scan it, matching the "Pay via UPI" button.
+                              if ((_paymentData?['upiLink'] ??
+                                      _paymentData?['upi_link']) !=
+                                  null)
                                 Container(
                                   padding: const EdgeInsets.all(20),
                                   decoration: BoxDecoration(
@@ -155,7 +162,9 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   child: QrImageView(
-                                    data: _paymentData?['qrData'] ?? _paymentData?['qr_data'] ?? '',
+                                    data: _paymentData?['upiLink'] ??
+                                        _paymentData?['upi_link'] ??
+                                        '',
                                     size: 220,
                                   ),
                                 ),

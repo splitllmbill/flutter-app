@@ -50,14 +50,22 @@ class AppUtils {
     return '$sym${amount.toStringAsFixed(2)}';
   }
 
-  /// Get initials from name
+  /// Get initials from name. Tolerates empty strings and repeated/leading
+  /// spaces (e.g. "John  Doe") without throwing a range error.
   static String getInitials(String name) {
-    final parts = name.trim().split(' ');
+    final parts =
+        name.trim().split(' ').where((p) => p.isNotEmpty).toList();
     if (parts.length >= 2) {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    } else if (parts.isNotEmpty && parts[0].isNotEmpty) {
+    } else if (parts.isNotEmpty) {
       return parts[0][0].toUpperCase();
     }
     return '?';
+  }
+
+  /// First character of a name for an avatar, safe on empty strings.
+  static String initial(String? name) {
+    final trimmed = (name ?? '').trim();
+    return trimmed.isEmpty ? 'U' : trimmed[0].toUpperCase();
   }
 }

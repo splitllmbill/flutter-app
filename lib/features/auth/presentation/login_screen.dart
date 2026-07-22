@@ -1,6 +1,8 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/utils/app_theme.dart';
@@ -85,14 +87,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           password: _passwordController.text,
         );
 
-        // Register with backend
+        // Register with backend. Replay a pending invite code (from a signup
+        // whose backend call couldn't run yet) so the account is created now.
+        final prefs = await SharedPreferences.getInstance();
+        final pendingInvite = prefs.getString('pendingInviteCode') ?? '';
         try {
           await apiClient.post('/db/login', data: {
             'email': _emailController.text.trim(),
             'password': _passwordController.text,
+            if (pendingInvite.isNotEmpty) 'inviteCode': pendingInvite,
           });
-        } catch (_) {
-          // Backend registration optional during migration
+          await prefs.remove('pendingInviteCode');
+        } on DioException catch (e) {
+          final detail =
+              e.response?.data is Map ? '${e.response?.data['detail']}' : '';
+          if (e.response?.statusCode == 400 && detail.toLowerCase().contains('invite')) {
+            // Not registered yet and no valid invite — surface, don't proceed.
+            await authService.signOut();
+            setState(() => _errorMessage = detail);
+            return;
+          }
+          // Otherwise the backend call is best-effort; continue.
         }
 
         if (mounted) {
@@ -104,13 +119,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           return;
         }
 
-        await authService.signUpWithEmail(
+        final res = await authService.signUpWithEmail(
           email: _emailController.text.trim(),
           password: _passwordController.text,
           displayName: _nameController.text.trim(),
         );
 
-        // Register with backend
+        // Cache the invite code so the first login can finish registration even
+        // if the /db/signup call below can't run yet.
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(
+            'pendingInviteCode', _inviteCodeController.text.trim());
+
+        // Email-confirmation projects return no session at signup; the user
+        // must confirm before they can sign in.
+        if (res.session == null) {
+          if (mounted) {
+            setState(() {
+              _isLogin = true;
+              _errorMessage = null;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                    'Check your email to confirm your account, then sign in.'),
+                backgroundColor: AppTheme.successColor,
+              ),
+            );
+          }
+          return;
+        }
+
+        // Session present — register with backend right away.
         try {
           await apiClient.post('/db/signup', data: {
             'email': _emailController.text.trim(),
@@ -118,8 +158,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             'password': _passwordController.text,
             'inviteCode': _inviteCodeController.text.trim(),
           });
+          await prefs.remove('pendingInviteCode');
         } catch (_) {
-          // Backend registration optional during migration
+          // Left cached; first login will finish registration.
         }
 
         if (mounted) {

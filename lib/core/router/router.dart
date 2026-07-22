@@ -157,11 +157,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/createExpense',
             builder: (context, state) => const CreateExpenseScreen(),
           ),
+          // Group/friend expenses use the split UI (equal/percentage/custom),
+          // which builds the shares + payShares the backend needs. Personal
+          // expenses use CreateExpenseScreen via /createExpense above.
           GoRoute(
             path: '/createExpense/:type/:id',
-            builder: (context, state) => CreateExpenseScreen(
-              type: state.pathParameters['type'] ?? '',
-              contextId: state.pathParameters['id'] ?? '',
+            builder: (context, state) => ShareBillScreen(
+              contextType: state.pathParameters['type'],
+              contextId: state.pathParameters['id'],
             ),
           ),
           GoRoute(
@@ -174,12 +177,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/expense/:expenseId/edit',
             builder: (context, state) => CreateExpenseScreen(
               expenseId: state.pathParameters['expenseId'],
-            ),
-          ),
-          GoRoute(
-            path: '/shareBill/:expenseType',
-            builder: (context, state) => ShareBillScreen(
-              expenseType: state.pathParameters['expenseType'] ?? '',
             ),
           ),
           GoRoute(

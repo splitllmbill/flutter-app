@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/currencies.dart';
 import '../../../core/providers.dart';
 import '../../../core/utils/app_theme.dart';
+import '../../../core/utils/helpers.dart';
 
 class AccountScreen extends ConsumerStatefulWidget {
   const AccountScreen({super.key});
@@ -423,11 +424,8 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                               backgroundColor:
                                   AppTheme.primaryColor.withValues(alpha: 0.2),
                               child: Text(
-                                (firebaseUser?.displayName ??
-                                        _account?['name'] ??
-                                        'U')
-                                    .substring(0, 1)
-                                    .toUpperCase(),
+                                AppUtils.initial(firebaseUser?.displayName ??
+                                    _account?['name']),
                                 style: const TextStyle(
                                   fontSize: 32,
                                   fontWeight: FontWeight.bold,
@@ -537,7 +535,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                               return ListTile(
                                 leading: CircleAvatar(
                                   backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.2),
-                                  child: Text((user['name'] ?? 'U')[0].toUpperCase()),
+                                  child: Text(AppUtils.initial(user['name'])),
                                 ),
                                 title: Text(user['name'] ?? 'Unknown'),
                                 subtitle: Text(user['email'] ?? ''),

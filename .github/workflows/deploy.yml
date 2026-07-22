@@ -4,6 +4,9 @@ on:
   pull_request:
   push:
     branches: [main]
+    # Pushing a v* tag cuts a GitHub Release with an installable APK attached
+    # (see the release-android job), which the in-app updater points users to.
+    tags: ["v*"]
   workflow_dispatch:
 
 jobs:
@@ -87,6 +90,49 @@ jobs:
       # No Apple signing credentials in CI; this validates the iOS project
       # compiles and links. Store/TestFlight builds are made from Xcode.
       - run: flutter build ios --release --no-codesign
+
+  # On a v* tag, publish a GitHub Release with the release APK attached. The
+  # download URL (…/releases/latest/download/app-release.apk) is what you point
+  # the backend's /version android.url at, so the in-app updater can link to it.
+  release-android:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.0"
+          channel: stable
+          cache: true
+      - name: Write .env (repo variables, else template)
+        run: |
+          if [ -n "${{ vars.API_BASE_URL }}" ]; then
+            {
+              echo "API_BASE_URL=${{ vars.API_BASE_URL }}"
+              echo "SUPABASE_URL=${{ vars.SUPABASE_URL }}"
+              echo "SUPABASE_ANON_KEY=${{ vars.SUPABASE_ANON_KEY }}"
+            } > .env
+          else
+            cp .env.example .env
+          fi
+      - run: flutter pub get
+      # Release signing uses android/key.properties if present, else the debug
+      # key. Ship a real upload/release keystore before publishing widely.
+      - run: flutter build apk --release
+      - name: Publish APK to the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          gh release create "${GITHUB_REF_NAME}" "$APK" \
+            --title "${GITHUB_REF_NAME}" --generate-notes \
+          || gh release upload "${GITHUB_REF_NAME}" "$APK" --clobber
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'

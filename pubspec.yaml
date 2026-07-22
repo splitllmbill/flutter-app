@@ -35,6 +35,8 @@ dependencies:
   flutter_dotenv: ^5.1.0
   intl: ^0.20.2
   shared_preferences: ^2.2.2
+  # Reads the running app's version to compare against GET /version.
+  package_info_plus: ^8.0.0
   url_launcher: ^6.2.3
   image_picker: ^1.0.7
   file_picker: ^11.0.2

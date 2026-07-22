@@ -8,14 +8,24 @@ import '../../../core/utils/app_theme.dart';
 import '../../../core/utils/helpers.dart';
 
 class ShareBillScreen extends ConsumerStatefulWidget {
-  final String expenseType;
-  const ShareBillScreen({super.key, required this.expenseType});
+  /// Split context: 'event' (group expense) or 'friend'. Null = ad-hoc split
+  /// with people added by email.
+  final String? contextType;
+  final String? contextId;
+  const ShareBillScreen({super.key, this.contextType, this.contextId});
 
   @override
   ConsumerState<ShareBillScreen> createState() => _ShareBillScreenState();
 }
 
 class _ShareBillScreenState extends ConsumerState<ShareBillScreen> {
+  /// Backend expense type: an event context is a "group" expense; everything
+  /// else settles between friends.
+  String get _expenseType => widget.contextType == 'event' ? 'group' : 'friend';
+
+  String _idOf(Map<String, dynamic> u) =>
+      (u['id'] ?? u['_id'])?.toString() ?? '';
+
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
@@ -33,7 +43,14 @@ class _ShareBillScreenState extends ConsumerState<ShareBillScreen> {
   @override
   void initState() {
     super.initState();
-    _loadAccount();
+    _init();
+  }
+
+  Future<void> _init() async {
+    await _loadAccount();
+    if (widget.contextType != null && widget.contextId != null) {
+      await _loadContextUsers();
+    }
   }
 
   Future<void> _loadAccount() async {
@@ -45,8 +62,31 @@ class _ShareBillScreenState extends ConsumerState<ShareBillScreen> {
           _me = Map<String, dynamic>.from(response.data);
           _currency = _me?['defaultCurrency'] ?? Currencies.defaultCode;
           // The payer splits the bill with the members, so they're part of it
-          if (!_users.any((u) => u['id'] == _me?['id'])) {
+          if (!_users.any((u) => _idOf(u) == _me?['id'])) {
             _users.insert(0, _me!);
+          }
+        });
+      }
+    } catch (_) {}
+  }
+
+  /// Preload the members of the event/friend context so the split starts with
+  /// the right people instead of an empty list.
+  Future<void> _loadContextUsers() async {
+    try {
+      final api = ref.read(apiClientProvider);
+      final res =
+          await api.get('/db/${widget.contextType}/${widget.contextId}/users');
+      final data = res.data;
+      if (data is List && mounted) {
+        setState(() {
+          for (final u in data) {
+            final m = Map<String, dynamic>.from(u as Map);
+            final id = _idOf(m);
+            if (id.isEmpty) continue;
+            if (!_users.any((x) => _idOf(x) == id)) {
+              _users.add(m);
+            }
           }
         });
       }
@@ -107,36 +147,62 @@ class _ShareBillScreenState extends ConsumerState<ShareBillScreen> {
       return;
     }
 
+    final totalAmount = double.parse(_amountController.text.trim());
+
+    // Shares must reconcile with the total or the backend rejects the expense
+    // with a generic error; validate up front with a clear message.
+    if (_splitType == 'percentage') {
+      final sumPct = _users.fold<double>(
+          0, (a, u) => a + (_percentages[_idOf(u)] ?? 0));
+      if ((sumPct - 100).abs() > 0.5) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(
+                'Percentages must add up to 100% (currently ${sumPct.toStringAsFixed(0)}%)')));
+        return;
+      }
+    } else if (_splitType == 'custom') {
+      final sumAmt = _users.fold<double>(
+          0, (a, u) => a + (_customAmounts[_idOf(u)] ?? 0));
+      if ((sumAmt - totalAmount).abs() > 1) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(
+                'Split amounts must add up to the total (${Currencies.symbolFor(_currency)}${totalAmount.toStringAsFixed(2)})')));
+        return;
+      }
+    }
+
     setState(() => _isLoading = true);
     try {
       final api = ref.read(apiClientProvider);
-      final totalAmount = double.parse(_amountController.text.trim());
+      final eventId =
+          widget.contextType == 'event' ? widget.contextId : null;
 
       List<Map<String, dynamic>> shares;
       if (_splitType == 'equal') {
         final perPerson = totalAmount / _users.length;
         shares = _users.map((u) {
-          return {
-            'userId': u['id'] ?? u['_id'],
-            'amount': perPerson,
-          };
+          return {'userId': _idOf(u), 'amount': perPerson};
         }).toList();
       } else if (_splitType == 'percentage') {
         shares = _users.map((u) {
-          final pct =
-              _percentages[u['id']?.toString() ?? u['_id']?.toString()] ?? 0;
+          final pct = _percentages[_idOf(u)] ?? 0;
           return {
-            'userId': u['id'] ?? u['_id'],
+            'userId': _idOf(u),
             'amount': totalAmount * pct / 100,
             'percentage': pct,
           };
         }).toList();
       } else {
         shares = _users.map((u) {
-          final amt =
-              _customAmounts[u['id']?.toString() ?? u['_id']?.toString()] ?? 0;
-          return {'userId': u['id'] ?? u['_id'], 'amount': amt};
+          final amt = _customAmounts[_idOf(u)] ?? 0;
+          return {'userId': _idOf(u), 'amount': amt};
         }).toList();
+      }
+
+      if (eventId != null) {
+        for (final s in shares) {
+          s['eventId'] = eventId;
+        }
       }
 
       // The current user pays the bill; shares define who owes what
@@ -151,7 +217,8 @@ class _ShareBillScreenState extends ConsumerState<ShareBillScreen> {
           'payShares': [
             {'userId': myId, 'amount': totalAmount}
           ],
-        'type': widget.expenseType,
+        'type': _expenseType,
+        if (eventId != null) 'eventId': eventId,
         'date': _date ?? DateTime.now().toIso8601String(),
       });
 
@@ -162,7 +229,7 @@ class _ShareBillScreenState extends ConsumerState<ShareBillScreen> {
             backgroundColor: AppTheme.successColor,
           ),
         );
-        context.pop();
+        context.pop(true);
       }
     } catch (e) {
       if (mounted) {

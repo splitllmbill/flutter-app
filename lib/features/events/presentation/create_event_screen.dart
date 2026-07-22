@@ -61,12 +61,21 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
       final response = await api.get('/db/event/${widget.eventId}');
       final data = response.data;
       setState(() {
-        _titleController.text = data['title'] ?? data['name'] ?? '';
+        // Backend returns eventName + users (list of {id,name,email} objects).
+        _titleController.text =
+            data['eventName'] ?? data['title'] ?? data['name'] ?? '';
         _descriptionController.text = data['description'] ?? '';
         _currency = data['currency'] ?? Currencies.defaultCode;
         _hasExpenses = (data['expenses'] as List?)?.isNotEmpty ?? false;
-        if (data['members'] != null) {
-          _memberEmails.addAll(List<String>.from(data['members']));
+        final users = data['users'];
+        if (users is List) {
+          for (final u in users) {
+            final email =
+                (u is Map) ? (u['email']?.toString() ?? '') : u.toString();
+            if (email.isNotEmpty && !_memberEmails.contains(email)) {
+              _memberEmails.add(email);
+            }
+          }
         }
         _isLoading = false;
       });

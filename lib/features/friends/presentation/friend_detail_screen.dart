@@ -117,8 +117,13 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () =>
-            context.push('/createExpense/friend/${widget.friendId}'),
+        onPressed: () async {
+          final result =
+              await context.push('/createExpense/friend/${widget.friendId}');
+          if (result == true) {
+            _loadData();
+          }
+        },
         child: const Icon(Icons.add),
       ),
       body: _isLoading

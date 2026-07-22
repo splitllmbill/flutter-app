@@ -3,12 +3,32 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../utils/app_theme.dart';
 import '../providers.dart';
+import '../services/update_service.dart';
+
+/// Runs the update check once per app session, the first time the shell mounts.
+bool _updateChecked = false;
 
 /// App shell with responsive navigation (side nav on desktop, bottom nav on mobile).
-class ShellScreen extends ConsumerWidget {
+class ShellScreen extends ConsumerStatefulWidget {
   final Widget child;
 
   const ShellScreen({super.key, required this.child});
+
+  @override
+  ConsumerState<ShellScreen> createState() => _ShellScreenState();
+}
+
+class _ShellScreenState extends ConsumerState<ShellScreen> {
+  @override
+  void initState() {
+    super.initState();
+    if (!_updateChecked) {
+      _updateChecked = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) maybePromptForUpdate(context, ref);
+      });
+    }
+  }
 
   int _getSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
@@ -43,7 +63,7 @@ class ShellScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final selectedIndex = _getSelectedIndex(context);
     final isWideScreen = MediaQuery.of(context).size.width >= 800;
     final accountAsync = ref.watch(userAccountProvider);
@@ -67,14 +87,14 @@ class ShellScreen extends ConsumerWidget {
               ),
             ),
             const VerticalDivider(width: 1),
-            Expanded(child: child),
+            Expanded(child: widget.child),
           ],
         ),
       );
     }
 
     return Scaffold(
-      body: child,
+      body: widget.child,
       bottomNavigationBar: _BottomNavBar(
         selectedIndex: selectedIndex,
         isAdmin: isAdmin,
